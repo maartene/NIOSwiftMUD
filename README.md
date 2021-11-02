@@ -2,6 +2,8 @@
 
 This is the code repository for the tutorial series where we're using Swift and NIO to create a MUD game.
 
+You can find the playlist for the tutorials here: https://www.youtube.com/playlist?list=PLhUrOtMlcKDAa0_WYh_J4vQ6Lzw0DvLLK 
+
 Note: this project uses the new concurrency features in Swift 5.5, so requires macOS 12 Monterey to build and run on macOS.
 
 Feel free to create issues if you find any bugs.
