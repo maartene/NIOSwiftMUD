@@ -35,4 +35,20 @@ final class SessionHandler: ChannelInboundHandler {
     
         context.fireChannelRead(wrapInboundOut(command))
     }
+    
+    public func channelActive(context: ChannelHandlerContext) {
+        let welcomeText = """
+        Welcome to NIOSwiftMUD!
+        Hope you enjoy your stay.
+        Please use 'CREATE_USER <username> <password>' to begin.
+        You can leave by using the 'CLOSE' command.
+        """
+        
+        let greenString = "\u{1B}[32m" + welcomeText + "\u{1B}[0m" + "\n> "
+        
+        var outBuff = context.channel.allocator.buffer(capacity: greenString.count)
+        outBuff.writeString(greenString)
+        
+        context.writeAndFlush(NIOAny(outBuff), promise: nil)
+    }
 }

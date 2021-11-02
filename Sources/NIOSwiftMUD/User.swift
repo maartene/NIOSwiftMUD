@@ -79,12 +79,19 @@ struct User: DBType {
     let username: String
     let hashedPassword: String
     
+    init(id: UUID? = nil, username: String, password: String) {
+        self.id = id ?? UUID()
+        self.username = username
+        
+        self.hashedPassword = Hasher.hash(password + username)
+    }
+    
     static func create(username: String, password: String) async throws -> User {
         guard await User.first(username: username) == nil else {
             throw UserError.usernameAlreadyTaken
         }
-        
-        let player = User(id: UUID(), username: username, hashedPassword: password)
+                
+        let player = User(id: UUID(), username: username, password: password)
         await player.save()
         return player
     }
