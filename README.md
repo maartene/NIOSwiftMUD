@@ -7,6 +7,7 @@ Note: this project uses the new concurrency features in Swift 5.5, so requires m
 Feel free to create issues if you find any bugs.
 
 ## Episodes:
+
 * Ep 01: Echo Server: basic setup of a NIO project.
 * Ep 02: Pipeline: create a channel pipeline, fit for use with a MUD game.
 * Ep 03: User database: create a generic, asynchron o us backend to persist data in the game. And let players create users.
