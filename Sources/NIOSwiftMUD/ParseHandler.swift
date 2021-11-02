@@ -19,26 +19,37 @@ final class ParseHandler: ChannelInboundHandler {
     typealias InboundOut = MudResponse
     
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        let verbCommand = self.unwrapInboundIn(data)
-        
-        var updatedSession = verbCommand.session
-        let response: MudResponse
-        
-        switch verbCommand.verb {
-        case .close:
-            updatedSession.shouldClose = true
-            response = MudResponse(session: updatedSession, message: "Good Bye!")
-    
-        case .illegal:
-            response = MudResponse(session: updatedSession, message: "This is not a well formed sentence.")
-        case .empty:
-            response = MudResponse(session: updatedSession, message: "\n")
+        Task {
+            let verbCommand = self.unwrapInboundIn(data)
             
-        default:
-            response = MudResponse(session: updatedSession, message: "Command not implemented yet.")
+            var updatedSession = verbCommand.session
+            let response: MudResponse
+            
+            switch verbCommand.verb {
+            case .close:
+                updatedSession.shouldClose = true
+                response = MudResponse(session: updatedSession, message: "Good Bye!")
+            case .createUser(let username, let password):
+                do {
+                    let newUser = try await User.create(username: username, password: password)
+                    updatedSession.playerID = newUser.id
+                    response = MudResponse(session: updatedSession, message: "Welcome, \(newUser.username)! (\(updatedSession.playerID)")
+                } catch {
+                    response = MudResponse(session: updatedSession, message: "Error creating user: \(error)")
+                }
+                
+            case .illegal:
+                response = MudResponse(session: updatedSession, message: "This is not a well formed sentence.")
+            case .empty:
+                response = MudResponse(session: updatedSession, message: "\n")
+                
+            default:
+                response = MudResponse(session: updatedSession, message: "Command not implemented yet.")
+            }
+            
+            context.eventLoop.execute {
+                context.fireChannelRead(self.wrapInboundOut(response))
+            }
         }
-        
-            
-        context.fireChannelRead(wrapInboundOut(response))
     }
 }
