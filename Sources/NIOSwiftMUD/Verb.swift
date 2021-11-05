@@ -14,10 +14,13 @@ enum Verb {
     // known commands
     case close
     case createUser(username: String, password: String)
+    case login(username: String, password: String)
     
     static func expectedWordCount(verb: String) -> Int {
         switch verb.uppercased() {
         case "CREATE_USER":
+            return 3
+        case "LOGIN":
             return 3
         default:
             return 1
@@ -42,6 +45,8 @@ enum Verb {
             return .close
         case "CREATE_USER":
             return .createUser(username: String(parts[1]), password: String(parts[2]))
+        case "LOGIN":
+            return .login(username: String(parts[1]), password: String(parts[2]))
         default:
             return .illegal
         }

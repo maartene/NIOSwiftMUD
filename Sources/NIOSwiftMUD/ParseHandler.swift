@@ -33,9 +33,18 @@ final class ParseHandler: ChannelInboundHandler {
                 do {
                     let newUser = try await User.create(username: username, password: password)
                     updatedSession.playerID = newUser.id
-                    response = MudResponse(session: updatedSession, message: "Welcome, \(newUser.username)! (\(updatedSession.playerID)")
+                    response = MudResponse(session: updatedSession, message: "Welcome, \(newUser.username)!")
                 } catch {
                     response = MudResponse(session: updatedSession, message: "Error creating user: \(error)")
+                }
+                
+            case .login(let username, let password):
+                do {
+                    let existingUser = try await User.login(username: username, password: password)
+                    updatedSession.playerID = existingUser.id
+                    response = MudResponse(session: updatedSession, message: "Welcome back, \(existingUser.username)!")
+                } catch {
+                    response = MudResponse(session: updatedSession, message: "Error logging in user: \(error)")
                 }
                 
             case .illegal:

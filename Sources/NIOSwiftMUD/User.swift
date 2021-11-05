@@ -96,6 +96,18 @@ struct User: DBType {
         return player
     }
     
+    static func login(username: String, password: String) async throws -> User {
+        guard let user = await User.first(username: username) else {
+            throw UserError.userNotFound
+        }
+        
+        guard Hasher.verify(password: password + username, hashedPassword: user.hashedPassword) else {
+            throw UserError.passwordMismatch
+        }
+        
+        return user
+    }
+    
     static func first(username: String) async -> User? {
         await allUsers.first(where: { $0.username == username })
     }
@@ -109,4 +121,6 @@ struct User: DBType {
 
 enum UserError: Error {
     case usernameAlreadyTaken
+    case userNotFound
+    case passwordMismatch
 }

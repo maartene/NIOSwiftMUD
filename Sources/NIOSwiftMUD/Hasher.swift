@@ -18,4 +18,8 @@ struct Hasher {
         
         return hashData.description
     }
+    
+    static func verify(password: String, hashedPassword: String) -> Bool {
+        hash(password) == hashedPassword
+    }
 }
