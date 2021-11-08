@@ -78,6 +78,7 @@ struct User: DBType {
     let id: UUID
     let username: String
     let hashedPassword: String
+    var currentRoomID: UUID?
     
     init(id: UUID? = nil, username: String, password: String) {
         self.id = id ?? UUID()
@@ -110,6 +111,14 @@ struct User: DBType {
     
     static func first(username: String) async -> User? {
         await allUsers.first(where: { $0.username == username })
+    }
+    
+    static func find(_ id: UUID?) async -> User? {
+        if id == nil {
+            return nil
+        }
+        
+        return await allUsers.first(where: { $0.id == id })
     }
     
     func save() async {
