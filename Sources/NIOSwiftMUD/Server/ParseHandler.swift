@@ -16,7 +16,7 @@ struct MudResponse {
 final class ParseHandler: ChannelInboundHandler {
     
     typealias InboundIn = VerbCommand
-    typealias InboundOut = MudResponse
+    typealias InboundOut = [MudResponse]
     
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         Task {
@@ -30,18 +30,18 @@ final class ParseHandler: ChannelInboundHandler {
         }
     }
     
-    private func createMudResponse(verbCommand: VerbCommand) async -> MudResponse {
+    private func createMudResponse(verbCommand: VerbCommand) async -> [MudResponse] {
         var updatedSession = verbCommand.session
-        let response: MudResponse
+        let response: [MudResponse]
         
         guard verbCommand.verb.requiredLogin == false || updatedSession.playerID != nil else {
-            return MudResponse(session: updatedSession, message: "You need to be logged in to use this command.")
+            return [MudResponse(session: updatedSession, message: "You need to be logged in to use this command.")]
         }
         
         switch verbCommand.verb {
         case .close:
             updatedSession.shouldClose = true
-            response = MudResponse(session: updatedSession, message: "Good Bye!")
+            response = [MudResponse(session: updatedSession, message: "Good Bye!")]
         case .createUser(let username, let password):
            response  = await createUser(session: updatedSession, username: username, password: password)
         case .login(let username, let password):
@@ -54,12 +54,12 @@ final class ParseHandler: ChannelInboundHandler {
             
             
         case .illegal:
-            response = MudResponse(session: updatedSession, message: "This is not a well formed sentence.")
+            response = [MudResponse(session: updatedSession, message: "This is not a well formed sentence.")]
         case .empty:
-            response = MudResponse(session: updatedSession, message: "\n")
+            response = [MudResponse(session: updatedSession, message: "\n")]
             
         default:
-            response = MudResponse(session: updatedSession, message: "Command not implemented yet.")
+            response = [MudResponse(session: updatedSession, message: "Command not implemented yet.")]
         }
         
         return response

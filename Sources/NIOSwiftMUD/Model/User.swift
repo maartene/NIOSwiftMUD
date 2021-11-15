@@ -61,6 +61,10 @@ struct User: DBType {
         
         await Self.allUsers.save()
     }
+    
+    static func filter(where predicate: (User) -> Bool) async -> [User] {
+        await Self.allUsers.filter(where: predicate)
+    }
 }
 
 enum UserError: Error {

@@ -70,4 +70,8 @@ actor AwesomeDB<DatabaseType: DBType> {
     func first(where predicate: (DatabaseType) throws -> Bool) async -> DatabaseType? {
         try? storage.first(where: predicate)
     }
+    
+    func filter(where predicate: (DatabaseType) throws -> Bool) async -> [DatabaseType] {
+        (try? storage.filter(predicate)) ?? []
+    }
 }
