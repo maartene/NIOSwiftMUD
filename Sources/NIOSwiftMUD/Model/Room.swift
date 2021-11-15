@@ -18,9 +18,9 @@ struct Room: DBType {
     
     var formattedDescription: String {
         """
-            \(name)
-            \(description)
-            There are exits: \(exitsAsString)
+        \(name)
+        \(description)
+        There are exits: \(exitsAsString)
         
         """
     }
@@ -75,5 +75,10 @@ enum Direction: String, Codable {
         case .Out:
             return .In
         }
+    }
+    
+    public init?(stringValue: String) {
+        let capitalizedStringValue = stringValue.capitalized // NORTH --> North,  north --> North
+        self.init(rawValue: capitalizedStringValue)
     }
 }

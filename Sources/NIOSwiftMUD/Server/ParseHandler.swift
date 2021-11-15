@@ -48,6 +48,11 @@ final class ParseHandler: ChannelInboundHandler {
             response = await login(session: updatedSession, username: username, password: password)
         case .look:
             response = await look(session: updatedSession)
+        case .go(let direction):
+            response = await go(session: updatedSession, direction: direction)
+            
+            
+            
         case .illegal:
             response = MudResponse(session: updatedSession, message: "This is not a well formed sentence.")
         case .empty:

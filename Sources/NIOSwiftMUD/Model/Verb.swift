@@ -16,6 +16,7 @@ enum Verb {
     case createUser(username: String, password: String)
     case login(username: String, password: String)
     case look
+    case go(direction: Direction)
     
     var requiredLogin: Bool {
         switch self {
@@ -37,6 +38,8 @@ enum Verb {
             return 3
         case "LOGIN":
             return 3
+        case "GO":
+            return 2
         default:
             return 1
         }
@@ -66,6 +69,12 @@ enum Verb {
             return .login(username: String(parts[1]), password: String(parts[2]))
         case "LOOK":
             return .look
+        case "GO":
+            let direction = Direction(stringValue: String(parts[1]))
+            guard let direction = direction else {
+                return .illegal
+            }
+            return .go(direction: direction)
         default:
             return .illegal
         }

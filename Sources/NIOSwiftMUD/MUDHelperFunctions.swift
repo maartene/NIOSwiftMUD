@@ -52,3 +52,26 @@ func login(session: Session, username: String, password: String) async -> MudRes
     
     return response
 }
+
+func go(session: Session, direction: Direction) async -> MudResponse {
+    guard var player = await User.find(session.playerID) else {
+        return MudResponse(session: session, message: "Player not found in session.")
+    }
+    
+    guard let currentRoom = await Room.find(player.currentRoomID) else {
+        return MudResponse(session: session, message: "Cound not find room: \(String(describing: player.currentRoomID))")
+    }
+    
+    guard let exit = currentRoom.exits.first(where: {$0.direction == direction} ) else {
+        return MudResponse(session: session, message: "No exit found in direction \(direction).")
+    }
+    
+    guard let targetRoom = await Room.find(exit.targetRoomID) else {
+        return MudResponse(session: session, message: "Cound not find target room: \(String(describing: player.currentRoomID))")
+    }
+    
+    player.currentRoomID = exit.targetRoomID
+    await player.save()
+    
+    return MudResponse(session: session, message: "You moved into a new room: \n \(targetRoom.formattedDescription)")
+}
