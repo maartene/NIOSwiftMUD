@@ -12,7 +12,7 @@ Feel free to create issues if you find any bugs.
 
 * Ep 01: Echo Server: basic setup of a NIO project.
 * Ep 02: Pipeline: create a channel pipeline, fit for use with a MUD game.
-* Ep 03: User database: create a generic, asynchron o us backend to persist data in the game. And let players create users.
+* Ep 03: User database: create a generic, asynchronous backend to persist data in the game. And let players create users.
 * Ep 04: Small cleanup (1): create a welcome message and add password hashing.
 * Ep 05: Sessions: associate players with sessions and allow players to log in.
 * Ep 06: Rooms: add rooms to the game and let players look around.
