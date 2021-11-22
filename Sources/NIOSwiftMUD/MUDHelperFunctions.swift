@@ -93,6 +93,52 @@ func go(session: Session, direction: Direction) async -> [MudResponse] {
     return response
 }
 
+func sayMessage(session: Session, sentence: String) async -> [MudResponse] {
+    guard let player = await User.find(session.playerID) else {
+        return [MudResponse(session: session, message: "Player not found in session.")]
+    }
+    
+    var result = [MudResponse(session: session, message: "You say: \(sentence)")]
+    
+    result.append(contentsOf: await sendMessageToOtherPlayersInRoom(message: "\(player.username) says: \(sentence)", player: player))
+    
+    return result
+}
+
+func whisperMessage(to targetPlayerName: String, message: String, session: Session) async -> [MudResponse] {
+    guard let player = await User.find(session.playerID) else {
+        return [MudResponse(session: session, message: "Player not found in session.")]
+    }
+    
+    guard let targetPlayer = await User.filter(where: {$0.username == targetPlayerName}).first else {
+        return [MudResponse(session: session, message: "There is no player \(targetPlayerName) in the game.")]
+    }
+    
+    guard player.currentRoomID == targetPlayer.currentRoomID else {
+        return [MudResponse(session: session, message: "You can only whisper to other players in the room.")]
+    }
+    
+    guard let targetPlayerSession = SessionStorage.first(where: {$0.playerID == targetPlayer.id }) else {
+        return [MudResponse(session: session, message: "You can only whisper to players that are logged in.")]
+    }
+    
+    var result = [MudResponse(session: session, message: "You whisper to \(targetPlayerName): \(message)")]
+    
+    result.append(MudResponse(session: targetPlayerSession, message: "\(player.username) whispers to you: \(message)"))
+    
+    let playersInRoom = await User.filter(where: {$0.currentRoomID == player.currentRoomID})
+    
+    playersInRoom.forEach { otherPlayer in
+        if otherPlayer.id != player.id && otherPlayer.id != targetPlayer.id {
+            if let otherSession = SessionStorage.first(where: {$0.playerID == otherPlayer.id}) {
+                result.append(MudResponse(session: otherSession, message: "\(player.username) whispers something to \(targetPlayerName), but you can't quite make out what is said."))
+            }
+        }
+    }
+    
+    return result
+}
+
 func sendMessageToOtherPlayersInRoom(message: String, player: User) async -> [MudResponse] {
     let allPlayersInRoom = await User.filter {
         $0.currentRoomID == player.currentRoomID

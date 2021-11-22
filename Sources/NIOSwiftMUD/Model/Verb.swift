@@ -17,6 +17,8 @@ enum Verb {
     case login(username: String, password: String)
     case look
     case go(direction: Direction)
+    case say(sentence: String)
+    case whisper(targetUserName: String, message: String)
     
     var requiredLogin: Bool {
         switch self {
@@ -40,6 +42,10 @@ enum Verb {
             return 3
         case "GO":
             return 2
+        case "SAY":
+            return 2
+        case "WHISPER":
+            return 3
         default:
             return 1
         }
@@ -58,8 +64,6 @@ enum Verb {
             return .illegal
         }
         
-        
-        
         switch parts[0].uppercased() {
         case "CLOSE":
             return .close
@@ -75,6 +79,10 @@ enum Verb {
                 return .illegal
             }
             return .go(direction: direction)
+        case "SAY":
+            return .say(sentence: parts.dropFirst().joined(separator: " "))
+        case "WHISPER":
+            return .whisper(targetUserName: String(parts[1]), message: parts.dropFirst(2).joined(separator: " "))
         default:
             return .illegal
         }

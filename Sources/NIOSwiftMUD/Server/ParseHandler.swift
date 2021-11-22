@@ -50,7 +50,10 @@ final class ParseHandler: ChannelInboundHandler {
             response = await look(session: updatedSession)
         case .go(let direction):
             response = await go(session: updatedSession, direction: direction)
-            
+        case .say(let sentence):
+            response = await sayMessage(session: updatedSession, sentence: sentence)
+        case .whisper(let targetUserName, let message):
+            response = await whisperMessage(to: targetUserName, message: message, session: updatedSession)
             
             
         case .illegal:
