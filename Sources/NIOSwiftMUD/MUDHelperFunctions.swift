@@ -9,7 +9,7 @@ import Foundation
 
 func look(session: Session) async -> [MudResponse] {
     guard let user = await User.find(session.playerID) else {
-        return [MudResponse(session: session, message: "Could not find player with id \(session.playerID).")]
+        return [MudResponse(session: session, message: "Could not find player with id \(String(describing: session.playerID)).")]
     }
     
     guard let roomID = user.currentRoomID else {

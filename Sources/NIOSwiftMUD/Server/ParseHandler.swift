@@ -61,8 +61,8 @@ final class ParseHandler: ChannelInboundHandler {
         case .empty:
             response = [MudResponse(session: updatedSession, message: "\n")]
             
-        default:
-            response = [MudResponse(session: updatedSession, message: "Command not implemented yet.")]
+//        default:
+//            response = [MudResponse(session: updatedSession, message: "Command not implemented yet.")]
         }
         
         return response
