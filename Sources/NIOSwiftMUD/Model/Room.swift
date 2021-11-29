@@ -25,6 +25,8 @@ struct Room: DBType {
         """
     }
     
+    static let STARTER_ROOM_ID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+    
     var exitsAsString: String {
         let direction = exits.map { $0.direction.rawValue }
         return direction.joined(separator: " ")

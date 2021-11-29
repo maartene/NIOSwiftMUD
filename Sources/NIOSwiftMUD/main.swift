@@ -1,4 +1,5 @@
 import NIO
+import Foundation
 
 let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
 
@@ -17,8 +18,8 @@ let bootstrap = ServerBootstrap(group: group)
     .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 16)
     .childChannelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator())
 
-let host = "::1"    // "localhost" in ip6
-let port = 8888
+let host = ProcessInfo.processInfo.environment["NIOSWIFTMUD_HOSTNAME"] ?? "::1"
+let port = Int(ProcessInfo.processInfo.environment["NIOSWIFTMUD_PORT"] ?? "8888") ?? 8888
 
 let channel = try bootstrap.bind(host: host, port: port).wait()
 
