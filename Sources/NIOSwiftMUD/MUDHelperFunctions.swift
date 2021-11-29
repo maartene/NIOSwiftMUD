@@ -25,7 +25,7 @@ func look(session: Session) async -> [MudResponse] {
     
     let playerString = "Players:\n" + otherPlayersInRoom.map {$0.username}.joined(separator: ", ")
     
-    return [MudResponse(session: session, message: room.formattedDescription + "\n" + playerString)]
+    return [MudResponse(session: session, message: room.formattedDescription + playerString)]
 }
 
 func createUser(session: Session, username: String, password: String) async -> [MudResponse] {
