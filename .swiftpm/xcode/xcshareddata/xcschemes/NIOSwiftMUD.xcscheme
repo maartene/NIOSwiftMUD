@@ -74,18 +74,6 @@
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "NIOSWIFTMUD_PORT"
-            value = "2121"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-         <EnvironmentVariable
-            key = "DATABASE_URL"
-            value = "mongodb+srv://niots:poI9p7jRvWTtZL6q@mongodb-dev.wbsdl.mongodb.net/mongodb-dev?retryWrites=true&amp;w=majority"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
