@@ -1,0 +1,25 @@
+[
+    {    
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "The very first room",
+        "description": "Nothing special to see here.",
+        "exits": [
+            {
+                "direction": "North",
+                "targetRoomID": "21C9D03A-ADEA-4120-A126-406C1D841BED"
+            }
+            ]
+    },
+    {
+        "id": "21C9D03A-ADEA-4120-A126-406C1D841BED",
+        "name": "The second room",
+        "description": "Nothing here either",
+        "exits": [
+            {
+                "direction": "South",
+                "targetRoomID": "00000000-0000-0000-0000-000000000000" 
+            }
+        ]
+    }
+]
+
