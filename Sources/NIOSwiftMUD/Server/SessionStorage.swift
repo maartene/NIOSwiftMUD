@@ -13,6 +13,7 @@ struct Session {
     let channel: Channel
     var playerID: UUID?
     var shouldClose = false
+    var currentString = ""
 }
 
 final class SessionStorage {
