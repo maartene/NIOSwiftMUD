@@ -53,3 +53,10 @@ func sshChildChannelInitializer(_ channel: Channel, _ channelType: SSHChannelTyp
         return channel.eventLoop.makeFailedFuture(SSHServerError.invalidChannelType)
     }
 }
+
+extension SSHChannelData {
+    init(byteBuffer: ByteBuffer) {
+        let ioData = IOData.byteBuffer(byteBuffer)
+        self.init(type: .channel, data: ioData)
+    }
+}

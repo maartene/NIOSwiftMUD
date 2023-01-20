@@ -20,13 +20,14 @@ final class ResponseHandler: ChannelInboundHandler {
         
         responses.forEach { response in
             
-            let greenString = "\n\r\u{1B}[32m" + response.message + "\u{1B}[0m" + "\n\r> "
+            let greenString = "\n\u{1B}[32m" + response.message + "\u{1B}[0m" + "\n> "
             
-            var outBuff = context.channel.allocator.buffer(capacity: greenString.count)
-            outBuff.writeString(greenString)
+            let sshGreenString = greenString.replacingOccurrences(of: "\n", with: "\r\n")
+            
+            var outBuff = context.channel.allocator.buffer(capacity: sshGreenString.count)
+            outBuff.writeString(sshGreenString)
         
-            let ioData = IOData.byteBuffer(outBuff)
-            let channelData = SSHChannelData(type: .channel, data: ioData)
+            let channelData = SSHChannelData(byteBuffer: outBuff)
             response.session.channel.writeAndFlush(self.wrapInboundOut(channelData), promise: nil)
             
             // Update the session, because we might now have a player id or any other settings changed from commands.

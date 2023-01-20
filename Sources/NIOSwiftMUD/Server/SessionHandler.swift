@@ -9,7 +9,6 @@ import Foundation
 import NIO
 import NIOSSH
 
-
 struct TextCommand {
     let session: Session
     let command: String
@@ -39,12 +38,9 @@ final class SessionHandler: ChannelInboundHandler {
         var session = SessionStorage.first(where: { $0.channel.remoteAddress == context.channel.remoteAddress }) ?? Session(id: UUID(), channel: context.channel, playerID: nil)
         
         session.currentString += str
-        //print(str.debugDescription)
+
         if str.contains("\n") || str.contains("\r") {
-            let commandString = session.currentString + str
-            session.currentString = ""
-            let command = TextCommand(session: session, command: commandString)
-            
+            let command = session.toTextCommand
             context.fireChannelRead(wrapInboundOut(command))
         } else {
             context.writeAndFlush(self.wrapOutboundOut(inBuff), promise: nil)
@@ -68,9 +64,17 @@ final class SessionHandler: ChannelInboundHandler {
         var outBuff = context.channel.allocator.buffer(capacity: greenString.count)
         outBuff.writeString(greenString)
         
-        let ioData = IOData.byteBuffer(outBuff)
-        let channelData = SSHChannelData(type: .channel, data: ioData)
-        
+        let channelData = SSHChannelData(byteBuffer: outBuff)
         context.writeAndFlush(self.wrapOutboundOut(channelData), promise: nil)
+    }
+}
+
+extension Session {
+    /// Returns a new TextCommand, with the sessions currentString as the command, and the TextCommand's session.currentString set to ""
+    var toTextCommand: TextCommand {
+        var updatedSession = self
+        updatedSession.currentString = ""
+        let newCommand = TextCommand(session: updatedSession, command: self.currentString)
+        return newCommand
     }
 }
