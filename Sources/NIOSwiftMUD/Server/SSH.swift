@@ -45,11 +45,8 @@ func sshChildChannelInitializer(_ channel: Channel, _ channelType: SSHChannelTyp
     switch channelType {
     case .session:
         return channel.pipeline.addHandlers([BackPressureHandler(), SessionHandler(), VerbHandler(), ParseHandler(), ResponseHandler()])
-    case .directTCPIP:
-        print("DirectTCPIP connections are not supported. Only session channels are supported.")
-        return channel.eventLoop.makeFailedFuture(SSHServerError.invalidChannelType)
-    case .forwardedTCPIP:
-        print("DirectTCPIP connections are not supported. Only session channels are supported.")
+    default:
+        print("\(channelType) connections are not supported. Only session channels are supported.")
         return channel.eventLoop.makeFailedFuture(SSHServerError.invalidChannelType)
     }
 }

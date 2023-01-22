@@ -30,7 +30,7 @@ let bootstrap = ServerBootstrap(group: group)
     }
     .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
     .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(IPPROTO_TCP), TCP_NODELAY), value: 1)
-    .childChannelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator())
+//    .childChannelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator())
 //    .childChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
 //    .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 16)
 //    .childChannelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator())

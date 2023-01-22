@@ -14,6 +14,12 @@ struct Session {
     var playerID: UUID?
     var shouldClose = false
     var currentString = ""
+    
+    func erasingCurrentString() -> Session {
+        var updatedSession = self
+        updatedSession.currentString = ""
+        return updatedSession
+    }
 }
 
 final class SessionStorage {

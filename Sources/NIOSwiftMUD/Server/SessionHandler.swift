@@ -34,13 +34,13 @@ final class SessionHandler: ChannelInboundHandler {
         }
         
         let str = String(buffer: bytes)
-                
-        var session = SessionStorage.first(where: { $0.channel.remoteAddress == context.channel.remoteAddress }) ?? Session(id: UUID(), channel: context.channel, playerID: nil)
         
+        var session = SessionStorage.first(where: { $0.channel.remoteAddress == context.channel.remoteAddress }) ?? Session(id: UUID(), channel: context.channel, playerID: nil)
+                
         session.currentString += str
-
+        
         if str.contains("\n") || str.contains("\r") {
-            let command = session.toTextCommand
+            let command = TextCommand(session: session.erasingCurrentString(), command: session.currentString)
             context.fireChannelRead(wrapInboundOut(command))
         } else {
             context.writeAndFlush(self.wrapOutboundOut(inBuff), promise: nil)
@@ -66,15 +66,5 @@ final class SessionHandler: ChannelInboundHandler {
         
         let channelData = SSHChannelData(byteBuffer: outBuff)
         context.writeAndFlush(self.wrapOutboundOut(channelData), promise: nil)
-    }
-}
-
-extension Session {
-    /// Returns a new TextCommand, with the sessions currentString as the command, and the TextCommand's session.currentString set to ""
-    var toTextCommand: TextCommand {
-        var updatedSession = self
-        updatedSession.currentString = ""
-        let newCommand = TextCommand(session: updatedSession, command: self.currentString)
-        return newCommand
     }
 }
