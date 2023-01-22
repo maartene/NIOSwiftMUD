@@ -22,3 +22,4 @@ Feel free to create issues if you find any bugs.
 * Ep 10: Speak: let players speak out loud.
 * Ep 11: Whisper: let players say something to another player.
 * EP 12: Conclusion: where to go from here?  
+* EP 13: Use SSH instead of Telnet
