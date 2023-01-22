@@ -7,7 +7,7 @@
 
 import Foundation
 import NIO
-
+import NIOSSH
 
 struct TextCommand {
     let session: Session
@@ -16,20 +16,37 @@ struct TextCommand {
 
 final class SessionHandler: ChannelInboundHandler {
     
-    typealias InboundIn = ByteBuffer
+    //typealias InboundIn = ByteBuffer
+    typealias InboundIn = SSHChannelData
     typealias InboundOut = TextCommand
+    typealias OutboundOut = SSHChannelData
     
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let inBuff = self.unwrapInboundIn(data)
-        let str = inBuff.getString(at: 0, length: inBuff.readableBytes) ?? ""
         
-        let session = SessionStorage.first(where: { $0.channel.remoteAddress == context.channel.remoteAddress }) ?? Session(id: UUID(), channel: context.channel, playerID: nil)
+        guard case .byteBuffer(let bytes) = inBuff.data else {
+            fatalError("Unexpected read type")
+        }
+        
+        guard case .channel = inBuff.type else {
+            context.fireErrorCaught(SSHServerError.invalidDataType)
+            return
+        }
+        
+        let str = String(buffer: bytes)
+        
+        var session = SessionStorage.first(where: { $0.channel.remoteAddress == context.channel.remoteAddress }) ?? Session(id: UUID(), channel: context.channel, playerID: nil)
+                
+        session.currentString += str
+        
+        if str.contains("\n") || str.contains("\r") {
+            let command = TextCommand(session: session.erasingCurrentString(), command: session.currentString)
+            context.fireChannelRead(wrapInboundOut(command))
+        } else {
+            context.writeAndFlush(self.wrapOutboundOut(inBuff), promise: nil)
+        }
         
         SessionStorage.replaceOrStoreSessionSync(session)
-        
-        let command = TextCommand(session: session, command: str)
-    
-        context.fireChannelRead(wrapInboundOut(command))
     }
     
     public func channelActive(context: ChannelHandlerContext) {
@@ -40,11 +57,14 @@ final class SessionHandler: ChannelInboundHandler {
         You can leave by using the 'CLOSE' command.
         """
         
-        let greenString = "\u{1B}[32m" + welcomeText + "\u{1B}[0m" + "\n> "
+        let sshWelcomeText = welcomeText.replacingOccurrences(of: "\n", with: "\r\n")
+        
+        let greenString = "\u{1B}[32m" + sshWelcomeText + "\u{1B}[0m" + "\n\r> "
         
         var outBuff = context.channel.allocator.buffer(capacity: greenString.count)
         outBuff.writeString(greenString)
         
-        context.writeAndFlush(NIOAny(outBuff), promise: nil)
+        let channelData = SSHChannelData(byteBuffer: outBuff)
+        context.writeAndFlush(self.wrapOutboundOut(channelData), promise: nil)
     }
 }
