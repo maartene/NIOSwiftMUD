@@ -16,7 +16,6 @@ struct TextCommand {
 
 final class SessionHandler: ChannelInboundHandler {
     
-    //typealias InboundIn = ByteBuffer
     typealias InboundIn = SSHChannelData
     typealias InboundOut = TextCommand
     typealias OutboundOut = SSHChannelData
