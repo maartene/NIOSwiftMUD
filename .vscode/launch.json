@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug NIOSwiftMUD",
+            "program": "${workspaceFolder:NIOSwiftMUD}/.build/debug/NIOSwiftMUD",
+            "args": [],
+            "cwd": "${workspaceFolder:NIOSwiftMUD}",
+            "preLaunchTask": "swift: Build Debug NIOSwiftMUD"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Release NIOSwiftMUD",
+            "program": "${workspaceFolder:NIOSwiftMUD}/.build/release/NIOSwiftMUD",
+            "args": [],
+            "cwd": "${workspaceFolder:NIOSwiftMUD}",
+            "preLaunchTask": "swift: Build Release NIOSwiftMUD"
+        }
+    ]
+}
