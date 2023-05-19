@@ -1,3 +1,8 @@
+struct MudResponse {
+    let session: Session
+    let message: String
+}
+
 protocol MudCommand {
     static var token: String { get }
     static var expectedArgumentCount: Int { get }

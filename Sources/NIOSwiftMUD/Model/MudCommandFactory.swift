@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  MudCommandFactory.swift
 //  
 //
 //  Created by Maarten Engels on 01/11/2021.
@@ -14,6 +14,8 @@ class MudCommandFactory {
         CloseCommand.self,
         CreateUserCommand.self,
         LoginCommand.self,
+        LookCommand.self,
+        GoCommand.self
     ]
     // case illegal
     // case empty

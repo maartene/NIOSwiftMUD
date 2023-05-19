@@ -8,11 +8,6 @@
 import Foundation
 import NIO
 
-struct MudResponse {
-    let session: Session
-    let message: String
-}
-
 final class ParseHandler: ChannelInboundHandler {
     
     typealias InboundIn = MudCommand

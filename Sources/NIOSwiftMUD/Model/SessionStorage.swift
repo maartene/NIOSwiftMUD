@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  SessionStorage.swift
 //  
 //
 //  Created by Maarten Engels on 08/11/2021.
@@ -7,20 +7,6 @@
 
 import Foundation
 import NIO
-
-struct Session {
-    let id: UUID
-    let channel: Channel
-    var playerID: UUID?
-    var shouldClose = false
-    var currentString = ""
-    
-    func erasingCurrentString() -> Session {
-        var updatedSession = self
-        updatedSession.currentString = ""
-        return updatedSession
-    }
-}
 
 final class SessionStorage {
     static private var sessions = [Session]()
