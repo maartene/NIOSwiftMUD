@@ -9,13 +9,20 @@ import Foundation
 import NIO
 import NIOSSH
 
+struct MudSession: Session {
+    let id: UUID
+    let channel: Channel
+    var playerID: UUID?
+    var shouldClose = false
+    var currentString = ""
+}
+
 struct TextCommand {
-    let session: Session
+    let session: MudSession
     let command: String
 }
 
 final class SessionHandler: ChannelInboundHandler {
-    
     typealias InboundIn = SSHChannelData
     typealias InboundOut = TextCommand
     typealias OutboundOut = SSHChannelData
@@ -34,7 +41,13 @@ final class SessionHandler: ChannelInboundHandler {
         
         let str = String(buffer: bytes)
         
-        var session = SessionStorage.first(where: { $0.channel.remoteAddress == context.channel.remoteAddress }) ?? Session(id: UUID(), channel: context.channel, playerID: nil)
+        var session = SessionStorage.first(where: { session in 
+            if let session = session as? MudSession {
+                return session.channel.remoteAddress == context.channel.remoteAddress
+            } else {
+                return false
+            }
+        }) as? MudSession ?? MudSession(id: UUID(), channel: context.channel, playerID: nil)
                 
         session.currentString += str
         

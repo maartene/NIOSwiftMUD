@@ -11,6 +11,8 @@ let fixedKeyBase64b = "UIL9M6Utw/jiupzqq6F8EW4qySxAbgDS+wT7/RIjkJ4="
 let fixedKeyData = Data(base64Encoded: fixedKeyBase64b)!
 let hostKey = NIOSSHPrivateKey(ed25519Key: try! .init(rawRepresentation: fixedKeyData))
 
+let mudCommandFactory = MudCommandFactory()
+
 let bootstrap = ServerBootstrap(group: group)
 
     // Pipeline
