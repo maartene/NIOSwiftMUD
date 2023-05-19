@@ -7,26 +7,26 @@
 
 import Foundation
 
-func look(session: Session) async -> [MudResponse] {
-    guard let user = await User.find(session.playerID) else {
-        return [MudResponse(session: session, message: "Could not find player with id \(String(describing: session.playerID)).")]
-    }
+// func look(session: Session) async -> [MudResponse] {
+//     guard let user = await User.find(session.playerID) else {
+//         return [MudResponse(session: session, message: "Could not find player with id \(String(describing: session.playerID)).")]
+//     }
     
-    guard let roomID = user.currentRoomID else {
-        return [MudResponse(session: session, message: "You are in LIMBO!\n")]
-    }
+//     guard let roomID = user.currentRoomID else {
+//         return [MudResponse(session: session, message: "You are in LIMBO!\n")]
+//     }
     
-    guard let room = await Room.find(roomID) else {
-        return [MudResponse(session: session, message: "Could not find room with roomID \(roomID).\n")]
-    }
+//     guard let room = await Room.find(roomID) else {
+//         return [MudResponse(session: session, message: "Could not find room with roomID \(roomID).\n")]
+//     }
     
-    let otherPlayersInRoom = await User.filter(where: {$0.currentRoomID == roomID})
-        .filter({$0.id != user.id})
+//     let otherPlayersInRoom = await User.filter(where: {$0.currentRoomID == roomID})
+//         .filter({$0.id != user.id})
     
-    let playerString = "Players:\n" + otherPlayersInRoom.map {$0.username}.joined(separator: ", ")
+//     let playerString = "Players:\n" + otherPlayersInRoom.map {$0.username}.joined(separator: ", ")
     
-    return [MudResponse(session: session, message: room.formattedDescription + playerString)]
-}
+//     return [MudResponse(session: session, message: room.formattedDescription + playerString)]
+// }
 
 // func createUser(session: Session, username: String, password: String) async -> [MudResponse] {
 //     var updatedSession = session
