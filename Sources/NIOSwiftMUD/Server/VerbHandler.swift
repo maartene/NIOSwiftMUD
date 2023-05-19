@@ -8,23 +8,17 @@
 import Foundation
 import NIO
 
-struct VerbCommand {
-    let session: Session
-    let verb: Verb
-}
-
 final class VerbHandler: ChannelInboundHandler {
-    
+    static let commandFactory = MudCommandFactory()
+
     typealias InboundIn = TextCommand
-    typealias InboundOut = VerbCommand
+    typealias InboundOut = MudCommand
     
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let textCommand = self.unwrapInboundIn(data)
         
-        let verb = Verb.createVerb(from: textCommand.command)
-        
-        let verbCommand = VerbCommand(session: textCommand.session, verb: verb)
+        let mudCommand = Self.commandFactory.createMudCommand(from: textCommand.command, session: textCommand.session)
             
-        context.fireChannelRead(wrapInboundOut(verbCommand))
+        context.fireChannelRead(wrapInboundOut(mudCommand))
     }
 }
