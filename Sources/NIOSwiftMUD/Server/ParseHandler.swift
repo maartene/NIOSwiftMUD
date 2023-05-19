@@ -31,34 +31,5 @@ final class ParseHandler: ChannelInboundHandler {
         }
         
         return await mudCommand.execute()
-
-//         switch verbCommand.verb {
-//         case .close:
-//             updatedSession.shouldClose = true
-//             response = [MudResponse(session: updatedSession, message: "Good Bye!")]
-//         case .createUser(let username, let password):
-//            response  = await createUser(session: updatedSession, username: username, password: password)
-//         case .login(let username, let password):
-//             response = await login(session: updatedSession, username: username, password: password)
-//         case .look:
-//             response = await look(session: updatedSession)
-//         case .go(let direction):
-//             response = await go(session: updatedSession, direction: direction)
-//         case .say(let sentence):
-//             response = await sayMessage(session: updatedSession, sentence: sentence)
-//         case .whisper(let targetUserName, let message):
-//             response = await whisperMessage(to: targetUserName, message: message, session: updatedSession)
-            
-            
-//         case .illegal:
-//             response = [MudResponse(session: updatedSession, message: "This is not a well formed sentence.")]
-//         case .empty:
-//             response = [MudResponse(session: updatedSession, message: "\n")]
-            
-// //        default:
-// //            response = [MudResponse(session: updatedSession, message: "Command not implemented yet.")]
-//         }
-        
-        //return response
     }
 }
