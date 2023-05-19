@@ -8,7 +8,11 @@ struct CreateUserCommand: MudCommand {
     let password: String
     
     static func create(_ arguments: [String], session: Session) -> Self? {
-        CreateUserCommand(session: session, username: arguments[0], password: arguments[1])
+        guard arguments.count >= expectedArgumentCount else {
+            return nil
+        }
+
+        return CreateUserCommand(session: session, username: arguments[0], password: arguments[1])
     }
 
     func execute() async -> [MudResponse] {

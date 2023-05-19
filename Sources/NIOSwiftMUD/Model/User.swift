@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  User.swift
 //  
 //
 //  Created by Maarten Engels on 02/11/2021.
