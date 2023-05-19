@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  SessionHandler.swift
 //  
 //
 //  Created by Maarten Engels on 01/11/2021.

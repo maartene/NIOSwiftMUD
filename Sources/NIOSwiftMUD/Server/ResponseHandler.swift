@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  ResponseHandler.swift
 //  
 //
 //  Created by Maarten Engels on 01/11/2021.
