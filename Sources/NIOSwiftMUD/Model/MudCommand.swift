@@ -18,6 +18,10 @@ extension MudCommand {
     var requiresLogin: Bool {
         Self.requiresLogin
     }
+
+    var couldNotFindPlayerMessage: String {
+        "Could not find player with id \(String(describing: session.playerID))."
+    }
 }
 
 extension MudCommand {

@@ -19,7 +19,7 @@ struct WhisperCommand: MudCommand {
 
     func execute() async -> [MudResponse] {
         guard let player = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: "Player not found in session.")]
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
         }
         
         guard let targetPlayer = await User.filter(where: {$0.username.uppercased() == targetPlayerName.uppercased()}).first else {

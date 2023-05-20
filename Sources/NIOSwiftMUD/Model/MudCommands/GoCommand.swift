@@ -20,7 +20,7 @@ struct GoCommand: MudCommand {
 
     func execute() async -> [MudResponse] {
         guard var player = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: "Player not found in session.")]
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
         }
         
         guard let currentRoom = await Room.find(player.currentRoomID) else {

@@ -38,6 +38,10 @@ extension DBType {
     static func first(where predicate: (Self) -> Bool) async -> Self? {
         await Self.storage.first(where: predicate)
     }
+
+    static func count() async -> Int {
+        await Self.storage.count()
+    }
 }
 
 actor AwesomeDB<DatabaseType: DBType> {
@@ -101,5 +105,13 @@ actor AwesomeDB<DatabaseType: DBType> {
     
     func filter(where predicate: (DatabaseType) throws -> Bool) async -> [DatabaseType] {
         (try? storage.filter(predicate)) ?? []
+    }
+
+    func reloadStorage() async {
+        storage = Self.loadStorage()
+    }
+
+    func count() async -> Int {
+        storage.count
     }
 }

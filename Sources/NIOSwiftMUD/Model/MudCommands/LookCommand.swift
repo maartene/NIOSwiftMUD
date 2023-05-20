@@ -11,7 +11,7 @@ struct LookCommand: MudCommand {
 
     func execute() async -> [MudResponse] {
         guard let user = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: "Could not find player with id \(String(describing: session.playerID)).")]
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
         }
         
         guard let roomID = user.currentRoomID else {

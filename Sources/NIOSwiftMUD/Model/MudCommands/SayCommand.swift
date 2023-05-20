@@ -16,7 +16,7 @@ struct SayCommand: MudCommand {
 
     func execute() async -> [MudResponse] {
         guard let player = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: "Player not found in session.")]
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
         }
         
         var result = [MudResponse(session: session, message: "You say: \(sentence)")]

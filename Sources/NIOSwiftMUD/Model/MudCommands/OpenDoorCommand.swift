@@ -29,7 +29,7 @@ struct OpenDoorCommand: MudCommand {
 
     func execute() async -> [MudResponse] {
         guard let player = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: "Player not found in session.")]
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
         }
         
         guard let currentRoom = await Room.find(player.currentRoomID) else {
@@ -45,7 +45,7 @@ struct OpenDoorCommand: MudCommand {
         }
         
         guard door.isOpen == false else {
-            return [MudResponse(session: session, message: "Door direction \(direction) is already open.")]
+            return [MudResponse(session: session, message: "Door in direction \(direction) is already open.")]
         }
         
         door.isOpen = true
