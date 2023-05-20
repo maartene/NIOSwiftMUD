@@ -17,7 +17,8 @@ class MudCommandFactory {
         LookCommand.self,
         GoCommand.self,
         SayCommand.self,
-        WhisperCommand.self
+        WhisperCommand.self,
+        OpenDoorCommand.self
     ]
     
     func createMudCommand(from str: String, session: Session) -> MudCommand {

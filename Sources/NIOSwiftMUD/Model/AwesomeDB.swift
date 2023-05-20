@@ -8,7 +8,32 @@
 import Foundation
 
 protocol DBType: Codable {
+    static var storage: AwesomeDB<Self> { get }
     var id: UUID { get }
+}
+
+// MARK: Default implementation for default DB operations: `save`, `first`, `find` and `filter`.
+extension DBType {
+    func save() async {
+        await Self.storage.replaceOrAddDatabaseObject(self)
+        await Self.storage.save()
+    }
+    
+    static func find(_ id: UUID?) async -> Self? {
+        if id == nil {
+            return nil
+        }
+        
+        return await storage.first(where: {$0.id == id})
+    }
+    
+    static func filter(where predicate: (Self) -> Bool) async -> [Self] {
+        await Self.storage.filter(where: predicate)
+    }
+    
+    static func first(where predicate: (Self) -> Bool) async -> Self? {
+        await Self.storage.first(where: predicate)
+    }
 }
 
 actor AwesomeDB<DatabaseType: DBType> {

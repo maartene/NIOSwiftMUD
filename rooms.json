@@ -6,7 +6,8 @@
         "exits": [
             {
                 "direction": "North",
-                "targetRoomID": "21C9D03A-ADEA-4120-A126-406C1D841BED"
+                "targetRoomID": "21C9D03A-ADEA-4120-A126-406C1D841BED",
+                "doorID": "D53F80E6-013A-4AA5-9D15-92B0EBE735DF" 
             }
             ]
     },
@@ -17,7 +18,8 @@
         "exits": [
             {
                 "direction": "South",
-                "targetRoomID": "00000000-0000-0000-0000-000000000000" 
+                "targetRoomID": "00000000-0000-0000-0000-000000000000",
+                "doorID": "D53F80E6-013A-4AA5-9D15-92B0EBE735DF" 
             }
         ]
     }
