@@ -9,6 +9,7 @@ import Foundation
 
 protocol DBType: Codable {
     static var storage: AwesomeDB<Self> { get }
+    static var persist: Bool { get set }
     var id: UUID { get }
 }
 
@@ -16,7 +17,10 @@ protocol DBType: Codable {
 extension DBType {
     func save() async {
         await Self.storage.replaceOrAddDatabaseObject(self)
-        await Self.storage.save()
+        
+        if Self.persist {
+            await Self.storage.save()
+        }
     }
     
     static func find(_ id: UUID?) async -> Self? {
@@ -37,7 +41,6 @@ extension DBType {
 }
 
 actor AwesomeDB<DatabaseType: DBType> {
-    
     // type: User, filename: users.json
     // type: Room, filename: rooms.json
     

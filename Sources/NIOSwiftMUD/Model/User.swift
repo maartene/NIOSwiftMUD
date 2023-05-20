@@ -9,6 +9,7 @@ import Foundation
 
 struct User: DBType {
     static var storage: AwesomeDB<User> = AwesomeDB()
+    static var persist = true
     
     let id: UUID
     let username: String

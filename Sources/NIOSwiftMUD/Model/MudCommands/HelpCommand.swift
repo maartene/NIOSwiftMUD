@@ -8,18 +8,7 @@
 import Foundation
 
 struct HelpCommand: MudCommand {
-    static let token: String = "help"
-    static let expectedArgumentCount = 0
-    static let requiresLogin = false
-    
-    let session: Session
-    
-    static func create(_ arguments: [String], session: Session) -> Self? {
-        HelpCommand(session: session)
-    }
-
-    func execute() async -> [MudResponse] {
-        let helpString = 
+    static let HELP_STRING =
         """
         RECOGNIZED COMMANDS:
         ====================
@@ -37,7 +26,18 @@ struct HelpCommand: MudCommand {
         For support: maarten@thedreamweb.eu or create an issue on GitHub:
         https://github.com/maartene/NIOSwiftMUD/issues
         """
-        
-        return [MudResponse(session: session, message: helpString)]
+    
+    static let token: String = "help"
+    static let expectedArgumentCount = 0
+    static let requiresLogin = false
+    
+    let session: Session
+    
+    static func create(_ arguments: [String], session: Session) -> Self? {
+        HelpCommand(session: session)
+    }
+
+    func execute() async -> [MudResponse] {
+        return [MudResponse(session: session, message: Self.HELP_STRING)]
     }
 }
