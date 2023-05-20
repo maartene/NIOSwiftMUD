@@ -401,4 +401,100 @@ class CommandTests: XCTestCase {
 
         XCTAssertEqual(result[0].message, "Door in direction \(command.direction) is already open.")
     }
+    
+    // MARK: SayCommand
+    func test_SayCommand() async {
+        var session = MockSession()
+        let testusername = "Testuser_\(UUID())"
+        var testuser = User(username: testusername, password: "password")
+        testuser.currentRoomID = Room.STARTER_ROOM_ID
+        session.playerID = testuser.id // Simulate player successfully logged in.
+        await testuser.save()
+
+        var session2 = MockSession()
+        var testuser2 = User(username: "testuser_\(UUID())", password: "String")
+        testuser2.currentRoomID = Room.STARTER_ROOM_ID
+        session2.playerID = testuser2.id
+        SessionStorage.replaceOrStoreSessionSync(session2)
+        await testuser2.save()
+
+        let command = SayCommand(session: session, sentence: "Hello World!")
+        
+        let result = await command.execute()
+
+        guard result.count > 1 else {
+            XCTFail("Expected at least 2 MudResponses.")
+            return
+        }
+
+        XCTAssertEqual(result[0].message, "You say: \(command.sentence)")
+        XCTAssertEqual(result[1].message, "\(testusername) says: \(command.sentence)")
+    }
+    
+    // MARK: WhisperCommand
+    func test_WhisperCommand() async {
+        // Lots of setup needed: create three users, including sessions
+        
+        // testuser1
+        var session = MockSession()
+        let testusername = "Testuser_\(UUID())"
+        var testuser = User(username: testusername, password: "password")
+        testuser.currentRoomID = Room.STARTER_ROOM_ID
+        session.playerID = testuser.id // Simulate player successfully logged in.
+        SessionStorage.replaceOrStoreSessionSync(session)
+        await testuser.save()
+
+        defer { SessionStorage.deleteSession(session) } // Let's make sure we cleanup the sessions we created.
+    
+        // testuser2
+        var session2 = MockSession()
+        let testusername2 = "Testuser2_\(UUID())"
+        var testuser2 = User(username: testusername2, password: "String")
+        testuser2.currentRoomID = Room.STARTER_ROOM_ID
+        session2.playerID = testuser2.id
+        session2.currentString = "testuser2"
+        SessionStorage.replaceOrStoreSessionSync(session2)
+        await testuser2.save()
+        
+        defer { SessionStorage.deleteSession(session2) } // Let's make sure we cleanup the sessions we created.
+        
+        // testuser3
+        var session3 = MockSession()
+        let testusername3 = "Testuser3_\(UUID())"
+        var testuser3 = User(username: testusername3, password: "String")
+        testuser3.currentRoomID = Room.STARTER_ROOM_ID
+        session3.playerID = testuser3.id
+        session3.currentString = "testuser3"
+        SessionStorage.replaceOrStoreSessionSync(session3)
+        await testuser3.save()
+        
+        defer { SessionStorage.deleteSession(session3) } // Let's make sure we cleanup the sessions we created.
+        
+        // the actual SUT
+        let command = WhisperCommand(session: session, targetPlayerName: testusername3, message: "For your ears only")
+        
+        let result = await command.execute()
+                
+        // Validate the results
+        guard result.count > 2 else {
+            XCTFail("Expected at least 3 MudResponses.")
+            return
+        }
+
+        XCTAssertEqual(result[0].message, "You whisper to \(testusername3): \(command.message)")
+        
+        guard let messageForTestUser2 = result.first(where: { $0.session.playerID == testuser2.id }) else {
+            XCTFail("There should be a message for testuser2")
+            return
+        }
+        
+        guard let messageForTestUser3 = result.first(where: { $0.session.playerID == testuser3.id }) else {
+            XCTFail("There should be a message for testuser3")
+            return
+        }
+        
+        XCTAssertEqual(messageForTestUser2.message, "\(testusername) whispers something to \(testuser3.username), but you can't quite make out what is said.")
+        
+        XCTAssertEqual(messageForTestUser3.message, "\(testusername) whispers to you: \(command.message)")
+    }
 }
