@@ -14,6 +14,7 @@ Note: changes have been made after the YouTube series. In particular:
 * Commands are no longer enum based, and no longer parsed in switch statements. Commands are now a protocol that specific commands can adhere to. In other words, we now use polymorphism to steer behaviour.
 * `Session` is now a Protocol, whereas the `MudSession` is a specific implementation (that keeps track of channels). This way, the model is no longer dependant on knowledge about NIO, offering the option of stand alone testing.
 * `SessionStorage` is now part of the model and works on generic instances of the `Session` protocol instead of concrete type.
+* Doors (use the 'OPEN_DOOR <direction>' command.
 * Backspace support! 🎉 
 
 ## Episodes:
