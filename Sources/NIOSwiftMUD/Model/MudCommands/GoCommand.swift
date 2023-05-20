@@ -35,6 +35,10 @@ struct GoCommand: MudCommand {
             return [MudResponse(session: session, message: "Cound not find target room: \(String(describing: player.currentRoomID))")]
         }
         
+        guard await exit.isPassable() else {
+            return [MudResponse(session: session, message: "The exit is impassable.")]
+        }
+        
         var response = [MudResponse]()
         response.append(MudResponse(session: session, message: "You moved into a new room: \n \(targetRoom.formattedDescription)"))
         

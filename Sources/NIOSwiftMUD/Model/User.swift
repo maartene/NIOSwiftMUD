@@ -8,7 +8,7 @@
 import Foundation
 
 struct User: DBType {
-    private static var allUsers: AwesomeDB<User> = AwesomeDB()
+    static var storage: AwesomeDB<User> = AwesomeDB()
     
     let id: UUID
     let username: String
@@ -46,25 +46,7 @@ struct User: DBType {
     }
         
     static func first(username: String) async -> User? {
-        await allUsers.first(where: { $0.username.uppercased() == username.uppercased() })
-    }
-    
-    static func find(_ id: UUID?) async -> User? {
-        if id == nil {
-            return nil
-        }
-        
-        return await allUsers.first(where: { $0.id == id })
-    }
-    
-    func save() async {
-        await Self.allUsers.replaceOrAddDatabaseObject(self)
-        
-        await Self.allUsers.save()
-    }
-    
-    static func filter(where predicate: (User) -> Bool) async -> [User] {
-        await Self.allUsers.filter(where: predicate)
+        await storage.first(where: { $0.username.uppercased() == username.uppercased() })
     }
 }
 

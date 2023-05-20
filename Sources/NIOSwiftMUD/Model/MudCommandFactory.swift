@@ -14,10 +14,12 @@ class MudCommandFactory {
         CloseCommand.self,
         CreateUserCommand.self,
         LoginCommand.self,
+        HelpCommand.self,
         LookCommand.self,
         GoCommand.self,
         SayCommand.self,
-        WhisperCommand.self
+        WhisperCommand.self,
+        OpenDoorCommand.self
     ]
     
     func createMudCommand(from str: String, session: Session) -> MudCommand {

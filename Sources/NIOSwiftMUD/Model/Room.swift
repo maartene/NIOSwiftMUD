@@ -8,7 +8,7 @@
 import Foundation
 
 struct Room: DBType {
-    private static var allRooms: AwesomeDB<Room> = AwesomeDB()
+    static var storage: AwesomeDB<Room> = AwesomeDB()
     
     let id: UUID
     
@@ -31,20 +31,25 @@ struct Room: DBType {
         let direction = exits.map { $0.direction.rawValue }
         return direction.joined(separator: " ")
     }
-    
-    static func find(_ id: UUID?) async -> Room? {
-        if id == nil {
-            return nil
-        }
-        
-        return await allRooms.first(where: {$0.id == id})
-    }
-    
 }
 
 struct Exit: Codable {
     let direction: Direction
     let targetRoomID: UUID
+    let doorID: UUID?
+    
+    func isPassable() async -> Bool {
+        guard let doorID else {
+            return true
+        }
+        
+        guard let door = await Door.find(doorID) else {
+            print("Could not find door with id: \(doorID).")
+            return false
+        }
+        
+        return door.isOpen
+    }
 }
 
 
