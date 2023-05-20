@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  ResponseHandler.swift
 //  
 //
 //  Created by Maarten Engels on 01/11/2021.
@@ -28,17 +28,18 @@ final class ResponseHandler: ChannelInboundHandler {
             outBuff.writeString(sshGreenString)
         
             let channelData = SSHChannelData(byteBuffer: outBuff)
-            response.session.channel.writeAndFlush(self.wrapInboundOut(channelData), promise: nil)
+            if let session = response.session as? MudSession {
+                session.channel.writeAndFlush(self.wrapInboundOut(channelData), promise: nil)
             
-            // Update the session, because we might now have a player id or any other settings changed from commands.
-            SessionStorage.replaceOrStoreSessionSync(response.session)
-            
-            if response.session.shouldClose {
-                print("Closing session: \(response.session)")
-                SessionStorage.deleteSession(response.session)
-                _ = context.close()
+                // Update the session, because we might now have a player id or any other settings changed from commands.
+                SessionStorage.replaceOrStoreSessionSync(response.session)
+                
+                if response.session.shouldClose {
+                    print("Closing session: \(response.session)")
+                    SessionStorage.deleteSession(response.session)
+                    _ = context.close()
+                }
             }
-            
         }
         
         
