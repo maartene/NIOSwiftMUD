@@ -14,6 +14,7 @@ class MudCommandFactory {
         CloseCommand.self,
         CreateUserCommand.self,
         LoginCommand.self,
+        HelpCommand.self,
         LookCommand.self,
         GoCommand.self,
         SayCommand.self,

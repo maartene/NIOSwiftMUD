@@ -68,6 +68,7 @@ final class SessionHandler: ChannelInboundHandler {
         Hope you enjoy your stay.
         Please use 'CREATE_USER <username> <password>' to begin.
         You can leave by using the 'CLOSE' command.
+        For a list of commands, use 'HELP'.
         """
         
         let sshWelcomeText = welcomeText.replacingOccurrences(of: "\n", with: "\r\n")
