@@ -222,7 +222,7 @@ class CommandTests: XCTestCase {
             return
         }   
 
-        guard var firstExit = room.exits.first else {
+        guard let firstExit = room.exits.first else {
             XCTFail("Should have found at least 1 exit in the room.")
             return
         }
