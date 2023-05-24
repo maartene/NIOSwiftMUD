@@ -8,3 +8,4 @@ DerivedData/
 .swiftpm
 users.json
 Package.resolved
+sshKeys.json

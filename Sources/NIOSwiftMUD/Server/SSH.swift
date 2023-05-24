@@ -8,6 +8,7 @@
 import Foundation
 import NIOSSH
 import NIO
+import Crypto
 
 enum SSHServerError: Error {
     case invalidCommand
@@ -55,5 +56,32 @@ extension SSHChannelData {
     init(byteBuffer: ByteBuffer) {
         let ioData = IOData.byteBuffer(byteBuffer)
         self.init(type: .channel, data: ioData)
+    }
+}
+
+struct SSHKey: DBType {
+    enum SSHKeyError: Error {
+        case invalidBase64String
+    }
+    static var storage = AwesomeDB<SSHKey>()
+    static var persist = true
+    
+    let id: UUID
+    let base64Key: String
+    
+    static func initRandomKey() -> SSHKey {
+        let ed25519Key = Curve25519.Signing.PrivateKey()
+        let base64Key = ed25519Key.rawRepresentation.base64EncodedString()
+        return SSHKey(id: UUID(), base64Key: base64Key)
+    }
+    
+    func toNIOSSHPrivateKey() throws -> NIOSSHPrivateKey {
+        guard let keyData = Data(base64Encoded: base64Key) else {
+            throw SSHKeyError.invalidBase64String
+        }
+        
+        let key = try Curve25519.Signing.PrivateKey(rawRepresentation: keyData)
+        
+        return NIOSSHPrivateKey(ed25519Key: key)
     }
 }
