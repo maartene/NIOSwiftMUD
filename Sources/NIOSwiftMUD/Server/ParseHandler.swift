@@ -20,16 +20,15 @@ final class ParseHandler: ChannelInboundHandler, Sendable {
         let mudCommand = self.unwrapInboundIn(data)
         
         // `Context` does not conform to `@Sendable`, but `EventLoop` does,
-        // so we pass only the EventLoop and a reference to the `fireChannelRead` function.
+        // so we pass only the EventLoop and a boxed reference to the `fireChannelRead` function.
         let eventLoop = context.eventLoop
-        let fireChannelRead = context.fireChannelRead
+        let fireChannelReadInABox = NIOLoopBound(context.fireChannelRead, eventLoop: eventLoop)
         
         promise.completeWithTask {
             let response = await self.createMudResponse(mudCommand: mudCommand)
             
             eventLoop.execute {
-                //sendThroughEventloop(response)
-                fireChannelRead(self.wrapInboundOut(response))
+                fireChannelReadInABox.value(self.wrapInboundOut(response))
             }
         }
     }
