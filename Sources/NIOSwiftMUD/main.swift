@@ -22,9 +22,9 @@ func main() async {
 //        let hostKey = NIOSSHPrivateKey(ed25519Key: try! .init(rawRepresentation: fixedKeyData))
         
         // This should be default behaviour, but let's be specific
-        User.persist = true
-        Room.persist = true
-        Door.persist = true
+        User.persist.store(true, ordering: .relaxed)
+        Room.persist.store(true, ordering: .relaxed)
+        Door.persist.store(true, ordering: .relaxed)
                 
         let bootstrap = ServerBootstrap(group: group)
             // Pipeline

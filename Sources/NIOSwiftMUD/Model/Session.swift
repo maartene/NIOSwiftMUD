@@ -1,6 +1,6 @@
 import Foundation
 
-protocol Session {
+protocol Session: Sendable {
     var id: UUID { get }
     var playerID: UUID? { get set }
     var shouldClose: Bool { get set}

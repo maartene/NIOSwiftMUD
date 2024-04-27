@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import Atomics
 
 struct User: DBType {
-    static var storage: AwesomeDB<User> = AwesomeDB()
-    static var persist = true
+    static let storage: AwesomeDB<User> = AwesomeDB()
+    static let persist = ManagedAtomic(true)
     
     let id: UUID
     let username: String

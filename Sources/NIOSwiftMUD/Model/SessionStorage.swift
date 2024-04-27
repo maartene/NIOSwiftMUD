@@ -9,8 +9,8 @@ import Foundation
 import NIO
 
 final class SessionStorage {
-    static private var sessions = [Session]()
-    static private var lock = NSLock()
+    nonisolated(unsafe) static private var sessions = [Session]()
+    static private let lock = NSLock()
     
     static func replaceOrStoreSessionSync(_ session: Session) {
         lock.lock()

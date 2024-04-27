@@ -3,7 +3,7 @@ struct CloseCommand: MudCommand {
     static let expectedArgumentCount = 0
     static let requiresLogin = false
     
-    let session: Session
+    let session: any Session
     
     static func create(_ arguments: [String], session: Session) -> Self? {
         return CloseCommand(session: session)

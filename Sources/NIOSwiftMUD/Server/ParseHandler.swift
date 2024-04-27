@@ -8,12 +8,13 @@
 import Foundation
 import NIO
 
-final class ParseHandler: ChannelInboundHandler {
+final class ParseHandler: ChannelInboundHandler, Sendable {
     
     typealias InboundIn = MudCommand
     typealias InboundOut = [MudResponse]
     
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        
         let promise = context.eventLoop.makePromise(of: Void.self)
         
         let mudCommand = self.unwrapInboundIn(data)
@@ -27,19 +28,10 @@ final class ParseHandler: ChannelInboundHandler {
             let response = await self.createMudResponse(mudCommand: mudCommand)
             
             eventLoop.execute {
+                //sendThroughEventloop(response)
                 fireChannelRead(self.wrapInboundOut(response))
             }
         }
-        
-//        Task {
-//            let mudCommand = self.unwrapInboundIn(data)
-//
-//            let response = await createMudResponse(mudCommand: mudCommand)
-//
-//            context.eventLoop.execute {
-//                context.fireChannelRead(self.wrapInboundOut(response))
-//            }
-//        }
     }
     
     private func createMudResponse(mudCommand: MudCommand) async -> [MudResponse] {
