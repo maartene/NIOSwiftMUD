@@ -1,4 +1,4 @@
-struct MudResponse: Sendable {
+struct MudResponse {
     let session: Session
     let message: String
 }
