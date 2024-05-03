@@ -22,6 +22,10 @@ struct WhisperCommand: MudCommand {
             return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
         }
         
+        guard player.username != targetPlayerName else {
+            return [MudResponse(session: session, message: "Talking to yourself much, eh?")]
+        }
+
         guard let targetPlayer = await User.filter(where: {$0.username.uppercased() == targetPlayerName.uppercased()}).first else {
             return [MudResponse(session: session, message: "There is no player \(targetPlayerName) in the game.")]
         }

@@ -497,4 +497,28 @@ class CommandTests: XCTestCase {
         
         XCTAssertEqual(messageForTestUser3.message, "\(testusername) whispers to you: \(command.message)")
     }
+
+    func test_WhisperCommand_returnsFunnyMessage_when_YouTargetYourself() async {
+        // Lots of setup needed: create three users, including sessions
+        
+        // testuser1
+        var session = MockSession()
+        let testusername = "Testuser_\(UUID())"
+        var testuser = User(username: testusername, password: "password")
+        testuser.currentRoomID = Room.STARTER_ROOM_ID
+        session.playerID = testuser.id // Simulate player successfully logged in.
+        SessionStorage.replaceOrStoreSessionSync(session)
+        await testuser.save()
+
+        defer { SessionStorage.deleteSession(session) } // Let's make sure we cleanup the sessions we created.
+    
+        // the actual SUT
+        let command = WhisperCommand(session: session, targetPlayerName: testusername, message: "For your ears only")
+        
+        let result = await command.execute()
+                
+        // Validate the results
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].message, "Talking to yourself much, eh?")
+    }
 }
