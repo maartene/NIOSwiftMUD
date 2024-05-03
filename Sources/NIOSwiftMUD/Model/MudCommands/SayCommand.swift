@@ -1,6 +1,6 @@
 struct SayCommand: MudCommand {
     static let token: String = "say"
-    static let expectedArgumentCount = 2
+    static let expectedArgumentCount = 1
     static let requiresLogin = true
     
     let session: Session

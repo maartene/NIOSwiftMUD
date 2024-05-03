@@ -159,9 +159,39 @@ final class MudCommandFactoryTests: XCTestCase {
         
         XCTAssertEqual(sayCommand.sentence, sentence)
     }
+
+    func test_SayCommand_withSingleWord() {
+        let sentence = "Hello"
+        let inputString = "  say  \(sentence)       "
+        
+        let command = commandFactory.createMudCommand(from: inputString, session: MockSession())
+        
+        guard let sayCommand = command as? SayCommand else {
+            XCTFail("Expected an SayCommand instance, but got \(command).")
+            return
+        }
+        
+        XCTAssertEqual(sayCommand.sentence, sentence)
+    }
     
     func test_WhisperCommand_create() {
         let message = "Hello, World!"
+        let targetPlayerName = "testuser"
+        let inputString = "  whisper     \(targetPlayerName)    \(message)       "
+        
+        let command = commandFactory.createMudCommand(from: inputString, session: MockSession())
+        
+        guard let whisperCommand = command as? WhisperCommand else {
+            XCTFail("Expected an WhisperCommand instance, but got \(command).")
+            return
+        }
+        
+        XCTAssertEqual(whisperCommand.targetPlayerName, targetPlayerName)
+        XCTAssertEqual(whisperCommand.message, message)
+    }
+
+    func test_WhisperCommand_withSingleWord() {
+        let message = "Hello"
         let targetPlayerName = "testuser"
         let inputString = "  whisper     \(targetPlayerName)    \(message)       "
         

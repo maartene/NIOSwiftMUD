@@ -1,6 +1,6 @@
 struct WhisperCommand: MudCommand {
     static let token: String = "whisper"
-    static let expectedArgumentCount = 3
+    static let expectedArgumentCount = 2
     static let requiresLogin = true
     
     let session: Session
@@ -20,6 +20,10 @@ struct WhisperCommand: MudCommand {
     func execute() async -> [MudResponse] {
         guard let player = await User.find(session.playerID) else {
             return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
+        }
+
+        guard player.username != targetPlayerName else {
+            return [MudResponse(session: session, message: "Talking to yourself much, eh?")]
         }
         
         guard player.username != targetPlayerName else {
