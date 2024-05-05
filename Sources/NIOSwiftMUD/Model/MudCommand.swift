@@ -3,7 +3,7 @@ struct MudResponse {
     let message: String
 }
 
-protocol MudCommand {
+protocol MudCommand: Sendable {
     static var token: String { get }
     static var expectedArgumentCount: Int { get }
     static var requiresLogin: Bool { get }

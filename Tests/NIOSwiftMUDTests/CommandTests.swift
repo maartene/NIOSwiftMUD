@@ -13,9 +13,9 @@ class CommandTests: XCTestCase {
     
     // MARK: Helpders
     override func setUp() {
-        User.persist = false
-        Room.persist = false
-        Door.persist = false
+        User.persist.store(false, ordering: .relaxed)
+        Room.persist.store(false, ordering: .relaxed)
+        Door.persist.store(false, ordering: .relaxed)
     }
 
     struct MockSession: Session {

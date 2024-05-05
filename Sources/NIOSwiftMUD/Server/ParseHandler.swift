@@ -8,38 +8,29 @@
 import Foundation
 import NIO
 
-final class ParseHandler: ChannelInboundHandler {
+final class ParseHandler: ChannelInboundHandler, Sendable {
     
     typealias InboundIn = MudCommand
     typealias InboundOut = [MudResponse]
     
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        
         let promise = context.eventLoop.makePromise(of: Void.self)
         
         let mudCommand = self.unwrapInboundIn(data)
         
         // `Context` does not conform to `@Sendable`, but `EventLoop` does,
-        // so we pass only the EventLoop and a reference to the `fireChannelRead` function.
+        // so we pass only the EventLoop and a boxed reference to the `fireChannelRead` function.
         let eventLoop = context.eventLoop
-        let fireChannelRead = context.fireChannelRead
+        let fireChannelReadInABox = NIOLoopBound(context.fireChannelRead, eventLoop: eventLoop)
         
         promise.completeWithTask {
             let response = await self.createMudResponse(mudCommand: mudCommand)
             
             eventLoop.execute {
-                fireChannelRead(self.wrapInboundOut(response))
+                fireChannelReadInABox.value(self.wrapInboundOut(response))
             }
         }
-        
-//        Task {
-//            let mudCommand = self.unwrapInboundIn(data)
-//
-//            let response = await createMudResponse(mudCommand: mudCommand)
-//
-//            context.eventLoop.execute {
-//                context.fireChannelRead(self.wrapInboundOut(response))
-//            }
-//        }
     }
     
     private func createMudResponse(mudCommand: MudCommand) async -> [MudResponse] {

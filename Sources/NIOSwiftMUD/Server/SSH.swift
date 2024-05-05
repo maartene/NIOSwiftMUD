@@ -9,6 +9,7 @@ import Foundation
 import NIOSSH
 import NIO
 import Crypto
+import Atomics
 
 enum SSHServerError: Error {
     case invalidCommand
@@ -63,8 +64,8 @@ struct SSHKey: DBType {
     enum SSHKeyError: Error {
         case invalidBase64String
     }
-    static var storage = AwesomeDB<SSHKey>()
-    static var persist = true
+    static let storage = AwesomeDB<SSHKey>()
+    static let persist = ManagedAtomic(true)
     
     let id: UUID
     let base64Key: String

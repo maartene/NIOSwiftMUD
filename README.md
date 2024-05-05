@@ -1,5 +1,5 @@
-![Swift 5.5](https://img.shields.io/badge/swift-5.5-orange.svg)
-![Vapor v4.0](https://img.shields.io/badge/vapor-4.0-blue) [![CircleCI](https://circleci.com/gh/maartene/NIOSwiftMUD.svg?style=shield)](https://circleci.com/gh/maartene/NIOSwiftMUD) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![Swift 5.10](https://img.shields.io/badge/swift-5.10-orange.svg)
+![Vapor v4.0](https://img.shields.io/badge/vapor-4.0-blue) [![CircleCI](https://circleci.com/gh/maartene/NIOSwiftMUD.svg?style=shield)](https://circleci.com/gh/maartene/MissionToMars) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # NIOSwiftMUD
 

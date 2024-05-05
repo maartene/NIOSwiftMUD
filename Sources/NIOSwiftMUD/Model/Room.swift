@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import Atomics
 
 struct Room: DBType {
-    static var storage: AwesomeDB<Room> = AwesomeDB()
-    static var persist = true
+    static let storage: AwesomeDB<Room> = AwesomeDB()
+    static let persist = ManagedAtomic(true)
     
     let id: UUID
     

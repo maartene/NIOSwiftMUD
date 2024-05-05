@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import Atomics
 
-protocol DBType: Codable {
+protocol DBType: Codable, Sendable {
     static var storage: AwesomeDB<Self> { get }
-    static var persist: Bool { get set }
+    static var persist: ManagedAtomic<Bool> { get }
     var id: UUID { get }
 }
 
@@ -18,7 +19,7 @@ extension DBType {
     func save() async {
         await Self.storage.replaceOrAddDatabaseObject(self)
         
-        if Self.persist {
+        if Self.persist.load(ordering: .relaxed) {
             await Self.storage.save()
         }
     }
@@ -31,11 +32,11 @@ extension DBType {
         return await storage.first(where: {$0.id == id})
     }
     
-    static func filter(where predicate: (Self) -> Bool) async -> [Self] {
+    static func filter(where predicate: @Sendable (Self) -> Bool) async -> [Self] {
         await Self.storage.filter(where: predicate)
     }
     
-    static func first(where predicate: (Self) -> Bool) async -> Self? {
+    static func first(where predicate: @Sendable (Self) -> Bool) async -> Self? {
         await Self.storage.first(where: predicate)
     }
 
@@ -99,11 +100,11 @@ actor AwesomeDB<DatabaseType: DBType> {
         }
     }
     
-    func first(where predicate: (DatabaseType) throws -> Bool) async -> DatabaseType? {
+    func first(where predicate: @Sendable (DatabaseType) throws -> Bool) async -> DatabaseType? {
         try? storage.first(where: predicate)
     }
     
-    func filter(where predicate: (DatabaseType) throws -> Bool) async -> [DatabaseType] {
+    func filter(where predicate: @Sendable (DatabaseType) throws -> Bool) async -> [DatabaseType] {
         (try? storage.filter(predicate)) ?? []
     }
 

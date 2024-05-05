@@ -1,8 +1,9 @@
 import Foundation
+import Atomics
 
 struct Door: DBType {
-    static var storage: AwesomeDB<Door> = AwesomeDB()
-    static var persist = true
+    static let storage: AwesomeDB<Door> = AwesomeDB()
+    static let persist = ManagedAtomic(true)
     
     let id: UUID
     

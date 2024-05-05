@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MudCommandFactory {
+final class MudCommandFactory: Sendable {
     let allCommands: [MudCommand.Type] = [
         IllegalCommand.self,
         EmptyCommand.self,
