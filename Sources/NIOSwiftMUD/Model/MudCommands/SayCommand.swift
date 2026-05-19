@@ -25,4 +25,16 @@ struct SayCommand: MudCommand {
         
         return result
     }
+    
+    func execute(in world: World) async -> [MudResponse] {
+        guard let player = await world.userRepository.find(session.playerID) else {
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
+        }
+        
+        var result = [MudResponse(session: session, message: "You say: \(sentence)")]
+        
+        result.append(contentsOf: await world.sendMessageToOtherPlayersInRoom(message: "\(player.username) says: \(sentence)", player: player))
+        
+        return result
+    }
 }

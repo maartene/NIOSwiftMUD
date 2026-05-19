@@ -150,24 +150,17 @@ import Testing
     }
 
     // MARK: LookCommand
-    @Test func lookCommand() async {
+    @Test func lookCommand() async throws {
         var session = MockSession()
-
         session.playerID = userRepository.userInStartingRoom.id // Simulate player successfully logged in.
 
         let command = LookCommand(session: session)
-
+        
         let result = await command.execute(in: world)
 
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            return
-        }
-
-        guard let defaultRoom = await roomRepository.find(Room.STARTER_ROOM_ID) else {
-            Issue.record("Should have found a starter room.")
-            return
-        }
+        try #require(result.isEmpty == false, "Expected at least 1 MudResponse.")
+        
+        let defaultRoom = try #require(await roomRepository.find(Room.STARTER_ROOM_ID), "Should have found a starter room.")
 
         let compareString = String(defaultRoom.name)
         let receivedString = String(result[0].message.prefix(compareString.count))
@@ -175,49 +168,27 @@ import Testing
     }
 
     // MARK: GoCommand
-    @Test func goCommand() async {
+    @Test func goCommand() async throws {
         let roomCount = await roomRepository.count()
         #expect(roomCount > 1)
 
         var session = MockSession()
         session.playerID = userRepository.userInStartingRoom.id // Simulate player successfully logged in.
 
-        guard let room = await roomRepository.find(userRepository.userInStartingRoom.currentRoomID) else {
-            Issue.record("Should have found a room for the player.")
-            return
-        }
+        let room = try #require(await roomRepository.find(userRepository.userInStartingRoom.currentRoomID), "Should have found a room for the player.")
 
-        guard room.exits.count > 0 else {
-            Issue.record("Should have found at least 1 exit in the room.")
-            return
-        }
-
-        guard let firstExit = room.exits.first else {
-            Issue.record("Should have found at least 1 exit in the room.")
-            return
-        }
-
-        // Make sure the exit is passable, by opening any door if one exists.
-        if var door = await Door.find(firstExit.doorID) {
-            door.isOpen = true
-            await door.save()
-            print("Opened door \(door.id).")
-        }
+        try #require(room.exits.isEmpty == false, "Should have found at least 1 exit in the room.")
+        
+        let firstExit = try #require(room.exits.first, "Should have found at least 1 exit in the room.")
 
         let command = GoCommand(session: session, direction: room.exits[0].direction)
 
         let result = await command.execute(in: world)
 
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            await Room.storage.reloadStorage()
-            return
-        }
+        try #require(result.isEmpty == false)
 
-        guard let updatedPlayer = await userRepository.find(session.playerID) else {
-            Issue.record("Player should have been found.")
-            return
-        }
+        let updatedPlayer = try #require(await userRepository.find(session.playerID), "Player should have been found.")
+
         #expect(updatedPlayer.currentRoomID == room.exits[0].targetRoomID)
     }
 
@@ -230,11 +201,7 @@ import Testing
 
         let result = await command.execute(in: world)
 
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            await Room.storage.reloadStorage()
-            return
-        }
+        try #require(result.isEmpty == false, "Expected at least 1 MudResponse.")
 
         let updatedPlayer = try #require(await userRepository.find(session.playerID), "Player should have been found.")
 
@@ -258,108 +225,64 @@ import Testing
     }
 
     // MARK: OpenDoorCommand
-    @Test func openDoor() async {
-        let closedDoor = Door(id: UUID(), isOpen: false)
-        await closedDoor.save()
-
-        let room1ID = UUID()
-        let room2ID = UUID()
-
-        let room1 = Room(id: room1ID, name: "Room 1", description: "Room 1", exits: [Exit(direction: .North, targetRoomID: room2ID, doorID: closedDoor.id)])
-        let room2 = Room(id: room2ID, name: "Room 2", description: "Room 2", exits: [Exit(direction: .South, targetRoomID: room1ID, doorID: closedDoor.id)])
-
-        await room1.save()
-        await room2.save()
-
+    @Test func openDoor() async throws {
         var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = room1ID
-        session.playerID = testuser.id // Simulate player successfully logged in.
+        session.playerID = userRepository.userNearClosedDoor.id
+        
+        let command = OpenDoorCommand(session: session, direction: .East)
 
-        await testuser.save()
+        let result = await command.execute(in: world)
 
-        let command = OpenDoorCommand(session: session, direction: .North)
+        try #require(result.isEmpty == false, "Expected at least 1 MudResponse.")
 
-        let result = await command.execute()
-
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            return
-        }
-
-        guard let updatedDoor = await Door.find(closedDoor.id) else {
-            Issue.record("Door should have been found.")
-            return
-        }
-
-        #expect(updatedDoor.isOpen)
+        #expect(doorRepository.closedDoor.isOpen)
     }
 
-    @Test func openDoorFailsIfDoorIsAlreadyOpen() async {
-        let openDoor = Door(id: UUID(), isOpen: true)
-        await openDoor.save()
-
-        let room1ID = UUID()
-        let room2ID = UUID()
-
-        let room1 = Room(id: room1ID, name: "Room 1", description: "Room 1", exits: [Exit(direction: .North, targetRoomID: room2ID, doorID: openDoor.id)])
-        let room2 = Room(id: room2ID, name: "Room 2", description: "Room 2", exits: [Exit(direction: .South, targetRoomID: room1ID, doorID: openDoor.id)])
-
-        await room1.save()
-        await room2.save()
+    @Test func openDoorFailsIfDoorIsAlreadyOpen() async throws {
+        var openDoor = doorRepository.closedDoor
+        openDoor.isOpen = true
+        await doorRepository.save(openDoor)
 
         var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = room1ID
-        session.playerID = testuser.id // Simulate player successfully logged in.
+        session.playerID = userRepository.userNearClosedDoor.id
 
-        await testuser.save()
+        let command = OpenDoorCommand(session: session, direction: .East)
 
-        let command = OpenDoorCommand(session: session, direction: .North)
+        let result = await command.execute(in: world)
 
-        let result = await command.execute()
-
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            return
-        }
+        try #require(result.isEmpty == false, "Expected at least 1 MudResponse.")
 
         #expect(result[0].message == "Door in direction \(command.direction) is already open.")
     }
 
     // MARK: SayCommand
-    @Test func sayCommand() async {
+    @Test func sayCommand() async throws {
         var session = MockSession()
         let testusername = "Testuser_\(UUID())"
         var testuser = User(username: testusername, password: "password")
         testuser.currentRoomID = Room.STARTER_ROOM_ID
         session.playerID = testuser.id // Simulate player successfully logged in.
-        await testuser.save()
+        await userRepository.save(testuser)
 
         var session2 = MockSession()
         var testuser2 = User(username: "testuser_\(UUID())", password: "String")
         testuser2.currentRoomID = Room.STARTER_ROOM_ID
         session2.playerID = testuser2.id
         SessionStorage.replaceOrStoreSessionSync(session2)
-        await testuser2.save()
+        await userRepository.save(testuser2)
 
         let command = SayCommand(session: session, sentence: "Hello World!")
 
-        let result = await command.execute()
+        let result = await command.execute(in: world)
 
-        guard result.count > 1 else {
-            Issue.record("Expected at least 2 MudResponses.")
-            return
-        }
+        try #require(result.count > 1, "Expected at least 2 MudResponses.")
 
         #expect(result[0].message == "You say: \(command.sentence)")
         #expect(result[1].message == "\(testusername) says: \(command.sentence)")
     }
 
     // MARK: WhisperCommand
-    @Test func whisperCommand() async {
+    @Test func whisperCommand() async throws {
         // Lots of setup needed: create three users, including sessions
 
         // testuser1
@@ -369,7 +292,7 @@ import Testing
         testuser.currentRoomID = Room.STARTER_ROOM_ID
         session.playerID = testuser.id // Simulate player successfully logged in.
         SessionStorage.replaceOrStoreSessionSync(session)
-        await testuser.save()
+        await userRepository.save(testuser)
 
         defer { SessionStorage.deleteSession(session) } // Let's make sure we cleanup the sessions we created.
 
@@ -381,7 +304,7 @@ import Testing
         session2.playerID = testuser2.id
         session2.currentString = "testuser2"
         SessionStorage.replaceOrStoreSessionSync(session2)
-        await testuser2.save()
+        await userRepository.save(testuser2)
 
         defer { SessionStorage.deleteSession(session2) } // Let's make sure we cleanup the sessions we created.
 
@@ -393,32 +316,23 @@ import Testing
         session3.playerID = testuser3.id
         session3.currentString = "testuser3"
         SessionStorage.replaceOrStoreSessionSync(session3)
-        await testuser3.save()
+        await userRepository.save(testuser3)
 
         defer { SessionStorage.deleteSession(session3) } // Let's make sure we cleanup the sessions we created.
 
         // the actual SUT
         let command = WhisperCommand(session: session, targetPlayerName: testusername3, message: "For your ears only")
 
-        let result = await command.execute()
+        let result = await command.execute(in: world)
 
         // Validate the results
-        guard result.count > 2 else {
-            Issue.record("Expected at least 3 MudResponses.")
-            return
-        }
+        try #require(result.count > 2, "Expected at least 3 MudResponses.")
 
         #expect(result[0].message == "You whisper to \(testusername3): \(command.message)")
 
-        guard let messageForTestUser2 = result.first(where: { $0.session.playerID == testuser2.id }) else {
-            Issue.record("There should be a message for testuser2")
-            return
-        }
+        let messageForTestUser2 = try #require(result.first(where: { $0.session.playerID == testuser2.id }), "There should be a message for testuser2")
 
-        guard let messageForTestUser3 = result.first(where: { $0.session.playerID == testuser3.id }) else {
-            Issue.record("There should be a message for testuser3")
-            return
-        }
+        let messageForTestUser3 = try #require(result.first(where: { $0.session.playerID == testuser3.id }), "There should be a message for testuser3")
 
         #expect(messageForTestUser2.message == "\(testusername) whispers something to \(testuser3.username), but you can't quite make out what is said.")
         #expect(messageForTestUser3.message == "\(testusername) whispers to you: \(command.message)")
@@ -426,19 +340,12 @@ import Testing
 
     @Test func whisperCommandReturnsFunnyMessageWhenYouTargetYourself() async {
         var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = Room.STARTER_ROOM_ID
-        session.playerID = testuser.id // Simulate player successfully logged in.
-        SessionStorage.replaceOrStoreSessionSync(session)
-        await testuser.save()
-
-        defer { SessionStorage.deleteSession(session) } // Let's make sure we cleanup the sessions we created.
+        session.playerID = userRepository.userInStartingRoom.id
 
         // the actual SUT
-        let command = WhisperCommand(session: session, targetPlayerName: testusername, message: "For your ears only")
+        let command = WhisperCommand(session: session, targetPlayerName: "test_user", message: "For your ears only")
 
-        let result = await command.execute()
+        let result = await command.execute(in: world)
 
         // Validate the results
         #expect(result.count == 1)
@@ -472,6 +379,10 @@ struct RoomRepositoryStub: Repository<Room> {
     
     func save(_ object: Room) async {
         // no-op
+    }
+    
+    func filter(where predicate: (Room) -> Bool) async -> [Room] {
+        rooms.filter(predicate)
     }
 }
 
@@ -508,11 +419,15 @@ final class InmemoryUserRepository: UserRepository {
     func find(_ username: String) async -> User? {
         users.first { $0.username == username }
     }
+    
+    func filter(where predicate: (User) -> Bool) async -> [User] {
+        users.filter(predicate)
+    }
 }
 
 
-struct DoorRepositoryStub: Repository<Door> {
-    let doors = [
+final class DoorRepositoryStub: Repository<Door> {
+    private var doors = [
         Door(id: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!, isOpen: false)
     ]
     
@@ -520,11 +435,23 @@ struct DoorRepositoryStub: Repository<Door> {
         doors.first(where: { $0.id == id })
     }
     
-    func count() async -> Int {
-        1
+    var closedDoor: Door {
+        doors[0]
     }
     
-    func save(_ object: NIOSwiftMUD.Door) async {
-        // no-op
+    func count() async -> Int {
+        doors.count
+    }
+    
+    func save(_ object: Door) async {
+        if let existingIndex = doors.firstIndex(where: { object.id == $0.id   }) {
+            doors[existingIndex] = object
+        } else {
+            doors.append(object)
+        }
+    }
+    
+    func filter(where predicate: (Door) -> Bool) async -> [Door] {
+        doors.filter(predicate)
     }
 }

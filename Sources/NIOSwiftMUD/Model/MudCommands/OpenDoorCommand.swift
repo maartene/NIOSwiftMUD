@@ -60,4 +60,37 @@ struct OpenDoorCommand: MudCommand {
         return response
     }
     
+    func execute(in world: World) async -> [MudResponse] {
+        guard let player = await world.userRepository.find(session.playerID) else {
+            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
+        }
+        
+        guard let currentRoom = await world.roomRepository.find(player.currentRoomID) else {
+            return  [MudResponse(session: session, message: "Cound not find room: \(String(describing: player.currentRoomID))")]
+        }
+        
+        guard let exit = currentRoom.exits.first(where: {$0.direction == direction} ) else {
+            return [MudResponse(session: session, message: "No exit found in direction \(direction).")]
+        }
+        
+        guard var door = await world.doorRepository.find(exit.doorID) else {
+            return [MudResponse(session: session, message: "No door to open in direction \(direction).")]
+        }
+        
+        guard door.isOpen == false else {
+            return [MudResponse(session: session, message: "Door in direction \(direction) is already open.")]
+        }
+        
+        door.isOpen = true
+        await world.doorRepository.save(door)
+        
+        var response = [MudResponse]()
+        response.append(MudResponse(session: session, message: "You opened the door in direction \(direction)."))
+        
+        let openMessage = await sendMessageToOtherPlayersInRoom(message: "\(player.username) has opened the door in direction \(direction).", player: player)
+        response.append(contentsOf: openMessage)
+        
+        return response
+    }
+    
 }

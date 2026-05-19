@@ -12,6 +12,7 @@ protocol Repository<T> {
     func find(_ id: UUID?) async -> T?
     func count() async -> Int
     func save(_ object: T) async
+    func filter(where predicate: (T) -> Bool) async -> [T]
 }
 
 protocol UserRepository: Repository<User> {
