@@ -10,9 +10,23 @@ import Testing
 @testable import NIOSwiftMUD
 
 @Suite struct CommandTests {
-    let userRepository = InmemoryUserRepository()
-    let roomRepository = RoomRepositoryStub()
-    let doorRepository = DoorRepositoryStub()
+    let userRepository = InMemoryRepository(storage: [User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID),
+                                                      User(id: UUID(), username: "a user", password: "123456", currentRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!),])
+    let roomRepository = InMemoryRepository(storage: [
+        Room(id: Room.STARTER_ROOM_ID, name: "Starter room", description: "Nothing interesting here", exits: [
+            Exit(direction: .North, targetRoomID: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, doorID: nil)
+        ]),
+        Room(id: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, name: "The second room", description: "Nothing here either", exits: [
+            Exit(direction: .South, targetRoomID: Room.STARTER_ROOM_ID, doorID: nil)
+        ]),
+        Room(id: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, name: "The second room", description: "Nothing here either", exits: [
+            Exit(direction: .East, targetRoomID: UUID(uuidString: "D53009EE-A0DE-4AB1-87A0-CD8C0BFD56FD")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
+        ]),
+        Room(id: UUID(uuidString: "D53009EE-A0DE-4AB1-87A0-CD8C0BFD56FD")!, name: "The second room", description: "Nothing here either", exits: [
+            Exit(direction: .West, targetRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
+        ]),
+    ])
+    let doorRepository = InMemoryRepository(storage: [Door(id: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!, isOpen: false)])
     let world: World
     
     init() {
@@ -353,105 +367,46 @@ import Testing
     }
 }
 
-struct RoomRepositoryStub: Repository<Room> {
-    private let rooms = [
-        Room(id: Room.STARTER_ROOM_ID, name: "Starter room", description: "Nothing interesting here", exits: [
-            Exit(direction: .North, targetRoomID: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, doorID: nil)
-        ]),
-        Room(id: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, name: "The second room", description: "Nothing here either", exits: [
-            Exit(direction: .South, targetRoomID: Room.STARTER_ROOM_ID, doorID: nil)
-        ]),
-        Room(id: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, name: "The second room", description: "Nothing here either", exits: [
-            Exit(direction: .East, targetRoomID: UUID(uuidString: "D53009EE-A0DE-4AB1-87A0-CD8C0BFD56FD")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
-        ]),
-        Room(id: UUID(uuidString: "D53009EE-A0DE-4AB1-87A0-CD8C0BFD56FD")!, name: "The second room", description: "Nothing here either", exits: [
-            Exit(direction: .West, targetRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
-        ]),
-    ]
+final class InMemoryRepository<T: Identifiable>: Repository<T> {
+    private var storage: [T] = []
     
-    func find(_ id: UUID?) async -> Room? {
-        return rooms.first(where: { $0.id == id })
+    init(storage: [T]) {
+        self.storage = storage
     }
     
+    func find(_ id: T.ID?) async -> T? {
+        storage.first(where: { $0.id == id })
+    }
+        
     func count() async -> Int {
-        rooms.count
+        storage.count
     }
     
-    func save(_ object: Room) async {
-        // no-op
+    func save(_ object: T) async {
+        if let existingIndex = storage.firstIndex(where: { object.id == $0.id   }) {
+            storage[existingIndex] = object
+        } else {
+            storage.append(object)
+        }
     }
     
-    func filter(where predicate: (Room) -> Bool) async -> [Room] {
-        rooms.filter(predicate)
+    func filter(where predicate: (T) -> Bool) async -> [T] {
+        storage.filter(predicate)
     }
 }
 
-final class InmemoryUserRepository: UserRepository {
-    private var users = [
-        User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID),
-        User(id: UUID(), username: "a user", password: "123456", currentRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!),
-    ]
-    
+extension InMemoryRepository where T == Door {
+    var closedDoor: Door {
+        storage[0]
+    }
+}
+
+extension InMemoryRepository where T == User {
     var userInStartingRoom: User {
-        users[0]
+        storage[0]
     }
     
     var userNearClosedDoor: User {
-        users[1]
-    }
-    
-    func find(_ id: UUID?) async -> NIOSwiftMUD.User? {
-        return users.first(where: { $0.id == id })
-    }
-    
-    func count() async -> Int {
-        users.count
-    }
-    
-    func save(_ user: User) async {
-        if let existingIndex = users.firstIndex(where: { user.id == $0.id   }) {
-            users[existingIndex] = user
-        } else {
-            users.append(user)
-        }
-    }
-    
-    func find(_ username: String) async -> User? {
-        users.first { $0.username == username }
-    }
-    
-    func filter(where predicate: (User) -> Bool) async -> [User] {
-        users.filter(predicate)
-    }
-}
-
-
-final class DoorRepositoryStub: Repository<Door> {
-    private var doors = [
-        Door(id: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!, isOpen: false)
-    ]
-    
-    func find(_ id: UUID?) async -> Door? {
-        doors.first(where: { $0.id == id })
-    }
-    
-    var closedDoor: Door {
-        doors[0]
-    }
-    
-    func count() async -> Int {
-        doors.count
-    }
-    
-    func save(_ object: Door) async {
-        if let existingIndex = doors.firstIndex(where: { object.id == $0.id   }) {
-            doors[existingIndex] = object
-        } else {
-            doors.append(object)
-        }
-    }
-    
-    func filter(where predicate: (Door) -> Bool) async -> [Door] {
-        doors.filter(predicate)
+        storage[1]
     }
 }

@@ -7,7 +7,7 @@
 
 struct World {
     let roomRepository: any Repository<Room>
-    let userRepository: any UserRepository
+    let userRepository: any Repository<User>
     let doorRepository: any Repository<Door>
     
     func sendMessageToOtherPlayersInRoom(message: String, player: User) async -> [MudResponse] {
