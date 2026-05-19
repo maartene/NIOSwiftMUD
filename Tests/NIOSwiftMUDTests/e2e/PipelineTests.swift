@@ -9,11 +9,6 @@ import Foundation
 // Serialized because tests share the global SessionStorage via EmbeddedChannel remoteAddress.
 @Suite(.serialized)
 struct PipelineTests {
-    init() {
-        User.persist = false
-        Room.persist = false
-        Door.persist = false
-    }
 
     @Test func connectReceivesWelcomeMessage() throws {
         let channel = try makeConnectedChannel(port: 0)

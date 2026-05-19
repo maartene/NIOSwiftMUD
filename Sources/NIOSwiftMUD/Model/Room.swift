@@ -34,6 +34,8 @@ struct Room: DBType {
     }
 }
 
+extension Room: Identifiable { }
+
 struct Exit: Codable {
     let direction: Direction
     let targetRoomID: UUID

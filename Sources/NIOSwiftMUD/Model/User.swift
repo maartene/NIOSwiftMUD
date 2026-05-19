@@ -56,3 +56,5 @@ enum UserError: Error {
     case userNotFound
     case passwordMismatch
 }
+
+extension User: Identifiable { }

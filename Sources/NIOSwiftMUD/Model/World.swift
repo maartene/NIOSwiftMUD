@@ -6,7 +6,7 @@
 //
 
 struct World {
-    let roomRepository: RoomRepository
-    let userRepository: UserRepository
+    let roomRepository: any Repository<Room>
+    let userRepository: any Repository<User>
     
 }

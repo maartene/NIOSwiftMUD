@@ -518,8 +518,7 @@ class CommandTests: XCTestCase {
     }
 }
 
-
-struct RoomRepositoryStub: RoomRepository {
+struct RoomRepositoryStub: Repository<Room> {
     private let rooms = [
         Room(id: Room.STARTER_ROOM_ID, name: "Starter room", description: "Nothing interesting here", exits: [
             Exit(direction: .North, targetRoomID: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, doorID: nil)
@@ -536,9 +535,13 @@ struct RoomRepositoryStub: RoomRepository {
     func count() async -> Int {
         rooms.count
     }
+    
+    func save(_ object: Room) async {
+        // no-op
+    }
 }
 
-struct UserRepositoryStub: UserRepository {
+struct UserRepositoryStub: Repository<User> {
     private let users = [
         User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
     ]
@@ -560,7 +563,7 @@ struct UserRepositoryStub: UserRepository {
     }
 }
 
-final class InmemoryUserRepository: UserRepository {
+final class InmemoryUserRepository: Repository<User> {
     private var users = [
         User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
     ]
