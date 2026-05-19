@@ -117,12 +117,7 @@ import Testing
     @Test func loginUserCommand() async {
         let session = MockSession()
 
-        let testusername = "Testuser_\(UUID())"
-        let testPassword = "FooBar123"
-        let testuser = User(username: testusername, password: testPassword)
-        await testuser.save()
-
-        let command = LoginCommand(session: session, username: testusername, password: testPassword)
+        let command = LoginCommand(session: session, username: "test_user", password: "password")
 
         let result = await command.execute(in: world)
 
@@ -132,8 +127,8 @@ import Testing
         }
 
         #expect(result[0].session.id == session.id)
-        #expect(result[0].session.playerID == testuser.id)
-        #expect(result[0].message == "Welcome back, \(testusername)!")
+        #expect(result[0].session.playerID == userRepository.testUser.id)
+        #expect(result[0].message == "Welcome back, test_user!")
     }
 
     @Test func loginUserCommandFailsWithWrongPassword() async {
@@ -161,7 +156,7 @@ import Testing
     // MARK: LookCommand
     @Test func lookCommand() async {
         let roomRepository = RoomRepositoryStub()
-        let userRepository = UserRepositoryStub()
+        let userRepository = InmemoryUserRepository()
         let world = World(roomRepository: roomRepository, userRepository: userRepository)
 
         var session = MockSession()
@@ -525,29 +520,7 @@ struct RoomRepositoryStub: Repository<Room> {
     }
 }
 
-struct UserRepositoryStub: Repository<User> {
-    private let users = [
-        User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
-    ]
-    
-    var testUser: User {
-        users[0]
-    }
-    
-    func find(_ id: UUID?) async -> User? {
-        return users.first(where: { $0.id == id })
-    }
-    
-    func count() async -> Int {
-        users.count
-    }
-    
-    func save(_ user: User) async {
-        // no-op
-    }
-}
-
-final class InmemoryUserRepository: Repository<User> {
+final class InmemoryUserRepository: UserRepository {
     private var users = [
         User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
     ]

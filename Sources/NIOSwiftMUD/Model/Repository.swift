@@ -14,8 +14,6 @@ protocol Repository<T> {
     func save(_ object: T) async
 }
 
-extension Repository where T == User {
-    func find(_ username: String) async -> User? {
-        nil
-    }
+protocol UserRepository: Repository<User> {
+    func find(_ username: String) async -> User?
 }
