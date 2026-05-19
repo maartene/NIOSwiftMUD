@@ -12,10 +12,11 @@ import Testing
 @Suite struct CommandTests {
     let userRepository = InmemoryUserRepository()
     let roomRepository = RoomRepositoryStub()
+    let doorRepository = DoorRepositoryStub()
     let world: World
     
     init() {
-        world = World(roomRepository: roomRepository, userRepository: userRepository)
+        world = World(roomRepository: roomRepository, userRepository: userRepository, doorRepository: doorRepository)
     }
     
     // MARK: Helpders
@@ -134,14 +135,9 @@ import Testing
     @Test func loginUserCommandFailsWithWrongPassword() async {
         let session = MockSession()
 
-        let testusername = "Testuser_\(UUID())"
-        let testPassword = "FooBar123"
-        let testuser = User(username: testusername, password: testPassword)
-        await testuser.save()
+        let command = LoginCommand(session: session, username: "test_user", password: "invalid password")
 
-        let command = LoginCommand(session: session, username: testusername, password: "invalid"+testPassword)
-
-        let result = await command.execute()
+        let result = await command.execute(in: world)
 
         guard result.count > 0 else {
             Issue.record("Expected at least 1 MudResponse.")
@@ -155,10 +151,6 @@ import Testing
 
     // MARK: LookCommand
     @Test func lookCommand() async {
-        let roomRepository = RoomRepositoryStub()
-        let userRepository = InmemoryUserRepository()
-        let world = World(roomRepository: roomRepository, userRepository: userRepository)
-
         var session = MockSession()
 
         session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
@@ -184,9 +176,6 @@ import Testing
 
     // MARK: GoCommand
     @Test func goCommand() async {
-        let roomRepository = RoomRepositoryStub()
-        let userRepository = InmemoryUserRepository()
-        let world = World(roomRepository: roomRepository, userRepository: userRepository)
         let roomCount = await roomRepository.count()
         #expect(roomCount > 1)
 
@@ -232,80 +221,45 @@ import Testing
         #expect(updatedPlayer.currentRoomID == room.exits[0].targetRoomID)
     }
 
-    @Test func goCommandFailsIfDoorIsClosed() async {
-        let closedDoor = Door(id: UUID(), isOpen: false)
-
-        let room1ID = UUID()
-        let room2ID = UUID()
-
-        let room1 = Room(id: room1ID, name: "Room 1", description: "Room 1", exits: [Exit(direction: .North, targetRoomID: room2ID, doorID: closedDoor.id)])
-        let room2 = Room(id: room2ID, name: "Room 2", description: "Room 2", exits: [Exit(direction: .South, targetRoomID: room1ID, doorID: closedDoor.id)])
-
-        await room1.save()
-        await room2.save()
-
+    @Test func `go command fails if door is closed`() async throws {
         var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = room1ID
+        let currentRoomID = UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!
+        let testuser = User(username: "a user", password: "password", currentRoomID: currentRoomID)
         session.playerID = testuser.id // Simulate player successfully logged in.
+        
+        await userRepository.save(testuser)
 
-        await testuser.save()
+        let command = GoCommand(session: session, direction: .East)
+
+        let result = await command.execute(in: world)
+
+        guard result.count > 0 else {
+            Issue.record("Expected at least 1 MudResponse.")
+            await Room.storage.reloadStorage()
+            return
+        }
+
+        let updatedPlayer = try #require(await userRepository.find(session.playerID), "Player should have been found.")
+
+        #expect(result[0].message == "The exit is impassable.")
+        #expect(updatedPlayer.currentRoomID == currentRoomID)
+    }
+
+    @Test func `go command fails if there is no exit in direction`() async throws {
+        var session = MockSession()
+        let currentRoomID = UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!
+        let testuser = User(username: "a user", password: "password", currentRoomID: currentRoomID)
+        session.playerID = testuser.id // Simulate player successfully logged in.
+        await userRepository.save(testuser)
 
         let command = GoCommand(session: session, direction: .North)
 
-        let result = await command.execute()
+        let result = await command.execute(in: world)
+        try #require(result.isEmpty == false, "Expected at least 1 MudResponse.")
 
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            await Room.storage.reloadStorage()
-            return
-        }
-
-        guard let updatedPlayer = await User.find(session.playerID) else {
-            Issue.record("Player should have been found.")
-            return
-        }
-        #expect(result[0].message == "The exit is impassable.")
-        #expect(updatedPlayer.currentRoomID == room1ID)
-    }
-
-    @Test func goCommandFailsIfThereIsNoExitInDirection() async {
-        let closedDoor = Door(id: UUID(), isOpen: false)
-
-        let room1ID = UUID()
-        let room2ID = UUID()
-
-        let room1 = Room(id: room1ID, name: "Room 1", description: "Room 1", exits: [Exit(direction: .North, targetRoomID: room2ID, doorID: closedDoor.id)])
-        let room2 = Room(id: room2ID, name: "Room 2", description: "Room 2", exits: [Exit(direction: .South, targetRoomID: room1ID, doorID: closedDoor.id)])
-
-        await room1.save()
-        await room2.save()
-
-        var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = room1ID
-        session.playerID = testuser.id // Simulate player successfully logged in.
-
-        await testuser.save()
-
-        let command = GoCommand(session: session, direction: .West)
-
-        let result = await command.execute()
-
-        guard result.count > 0 else {
-            Issue.record("Expected at least 1 MudResponse.")
-            await Room.storage.reloadStorage()
-            return
-        }
-
-        guard let updatedPlayer = await User.find(session.playerID) else {
-            Issue.record("Player should have been found.")
-            return
-        }
+        let updatedPlayer = try #require(await userRepository.find(session.playerID), "Player should have been found.")
         #expect(result[0].message == "No exit found in direction \(command.direction).")
-        #expect(updatedPlayer.currentRoomID == room1ID)
+        #expect(updatedPlayer.currentRoomID == currentRoomID)
     }
 
     // MARK: OpenDoorCommand
@@ -504,7 +458,13 @@ struct RoomRepositoryStub: Repository<Room> {
         ]),
         Room(id: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, name: "The second room", description: "Nothing here either", exits: [
             Exit(direction: .South, targetRoomID: Room.STARTER_ROOM_ID, doorID: nil)
-        ])
+        ]),
+        Room(id: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, name: "The second room", description: "Nothing here either", exits: [
+            Exit(direction: .East, targetRoomID: UUID(uuidString: "D53009EE-A0DE-4AB1-87A0-CD8C0BFD56FD")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
+        ]),
+        Room(id: UUID(uuidString: "D53009EE-A0DE-4AB1-87A0-CD8C0BFD56FD")!, name: "The second room", description: "Nothing here either", exits: [
+            Exit(direction: .West, targetRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
+        ]),
     ]
     
     func find(_ id: UUID?) async -> Room? {
@@ -547,5 +507,24 @@ final class InmemoryUserRepository: UserRepository {
     
     func find(_ username: String) async -> User? {
         users.first { $0.username == username }
+    }
+}
+
+
+struct DoorRepositoryStub: Repository<Door> {
+    let doors = [
+        Door(id: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!, isOpen: false)
+    ]
+    
+    func find(_ id: UUID?) async -> Door? {
+        doors.first(where: { $0.id == id })
+    }
+    
+    func count() async -> Int {
+        1
+    }
+    
+    func save(_ object: NIOSwiftMUD.Door) async {
+        // no-op
     }
 }

@@ -8,4 +8,5 @@
 struct World {
     let roomRepository: any Repository<Room>
     let userRepository: any UserRepository
+    let doorRepository: any Repository<Door>
 }

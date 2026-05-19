@@ -9,3 +9,6 @@ struct Door: DBType {
     var isOpen = false
 }
 
+extension Door: Identifiable {
+    
+}
