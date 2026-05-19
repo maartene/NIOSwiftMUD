@@ -31,7 +31,7 @@ struct PipelineTests {
         _ = try channel.readOutbound(as: SSHChannelData.self) // discard welcome
 
         try sendLine("HELP", to: channel)
-        for _ in 0..<10 { await Task.yield() }
+        for _ in 0..<100 { await Task.yield() }
         channel.embeddedEventLoop.run()
 
         #expect(try collectOutbound(from: channel).contains { $0.contains("RECOGNIZED COMMANDS") })

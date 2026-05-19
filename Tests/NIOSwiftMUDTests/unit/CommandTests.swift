@@ -172,24 +172,24 @@ class CommandTests: XCTestCase {
     
     // MARK: LookCommand
     func test_LookCommand() async {
+        let roomRepository = RoomRepositoryStub()
+        let userRepository = UserRepositoryStub()
+        let world = World(roomRepository: roomRepository, userRepository: userRepository)
+        
         var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = Room.STARTER_ROOM_ID // Make sure the player is in the starter room.
-        session.playerID = testuser.id // Simulate player successfully logged in.
-        
-        await testuser.save()
-        
+
+        session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
+
         let command = LookCommand(session: session)
         
-        let result = await command.execute()
+        let result = await command.execute(in: world)
         
         guard result.count > 0 else {
             XCTFail("Expected at least 1 MudResponse.")
             return
         }
         
-        guard let defaultRoom = await Room.find(Room.STARTER_ROOM_ID) else {
+        guard let defaultRoom = await roomRepository.find(Room.STARTER_ROOM_ID) else {
             XCTFail("Should have found a starter room.")
             return
         }
@@ -201,18 +201,16 @@ class CommandTests: XCTestCase {
     
     // MARK: GoCommand
     func test_GoCommand() async {
-        let roomCount = await Room.count()
+        let roomRepository = RoomRepositoryStub()
+        let userRepository = InmemoryUserRepository()
+        let world = World(roomRepository: roomRepository, userRepository: userRepository)
+        let roomCount = await roomRepository.count()
         XCTAssertGreaterThan(roomCount, 1)
         
         var session = MockSession()
-        let testusername = "Testuser_\(UUID())"
-        var testuser = User(username: testusername, password: "password")
-        testuser.currentRoomID = Room.STARTER_ROOM_ID
-        session.playerID = testuser.id // Simulate player successfully logged in.
+        session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
         
-        await testuser.save()
-        
-        guard let room = await Room.find(testuser.currentRoomID) else {
+        guard let room = await roomRepository.find(userRepository.testUser.currentRoomID) else {
             XCTFail("Should have found a room for the player.")
             return
         }
@@ -236,7 +234,7 @@ class CommandTests: XCTestCase {
 
         let command = GoCommand(session: session, direction: room.exits[0].direction)
 
-        let result = await command.execute()
+        let result = await command.execute(in: world)
 
         guard result.count > 0 else {
             XCTFail("Expected at least 1 MudResponse.")
@@ -244,7 +242,7 @@ class CommandTests: XCTestCase {
             return
         }
 
-        guard let updatedPlayer = await User.find(session.playerID) else {
+        guard let updatedPlayer = await userRepository.find(session.playerID) else {
             XCTFail("Player should have been found.")
             return
         }
@@ -518,4 +516,73 @@ class CommandTests: XCTestCase {
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].message, "Talking to yourself much, eh?")
     }
+}
+
+
+struct RoomRepositoryStub: RoomRepository {
+    private let rooms = [
+        Room(id: Room.STARTER_ROOM_ID, name: "Starter room", description: "Nothing interesting here", exits: [
+            Exit(direction: .North, targetRoomID: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, doorID: nil)
+        ]),
+        Room(id: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, name: "The second room", description: "Nothing here either", exits: [
+            Exit(direction: .South, targetRoomID: Room.STARTER_ROOM_ID, doorID: nil)
+        ])
+    ]
+    
+    func find(_ id: UUID?) async -> Room? {
+        return rooms.first(where: { $0.id == id })
+    }
+    
+    func count() async -> Int {
+        rooms.count
+    }
+}
+
+struct UserRepositoryStub: UserRepository {
+    private let users = [
+        User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
+    ]
+    
+    var testUser: User {
+        users[0]
+    }
+    
+    func find(_ id: UUID?) async -> User? {
+        return users.first(where: { $0.id == id })
+    }
+    
+    func count() async -> Int {
+        users.count
+    }
+    
+    func save(_ user: User) async {
+        // no-op
+    }
+}
+
+final class InmemoryUserRepository: UserRepository {
+    private var users = [
+        User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
+    ]
+    
+    var testUser: User {
+        users[0]
+    }
+    
+    func find(_ id: UUID?) async -> NIOSwiftMUD.User? {
+        return users.first(where: { $0.id == id })
+    }
+    
+    func count() async -> Int {
+        users.count
+    }
+    
+    func save(_ user: User) async {
+        if let existingIndex = users.firstIndex(where: { user.id == $0.id   }) {
+            users[existingIndex] = user
+        } else {
+            users.append(user)
+        }
+    }
+    
 }

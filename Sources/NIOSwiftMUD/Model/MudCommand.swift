@@ -12,6 +12,7 @@ protocol MudCommand {
 
     static func create(_ arguments: [String], session: Session) -> Self?
     func execute() async -> [MudResponse]
+    func execute(in world: World) async -> [MudResponse]
 }
 
 extension MudCommand {
@@ -21,6 +22,10 @@ extension MudCommand {
 
     var couldNotFindPlayerMessage: String {
         "Could not find player with id \(String(describing: session.playerID))."
+    }
+    
+    func execute(in world: World) async -> [MudResponse] {
+        await execute()
     }
 }
 
