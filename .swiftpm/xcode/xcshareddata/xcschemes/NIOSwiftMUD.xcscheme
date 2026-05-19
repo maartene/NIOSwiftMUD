@@ -61,7 +61,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/maartene/Developer/Swift Programming/NIOSwiftMUD"
+      customWorkingDirectory = "/Users/Maarten.Engels/Developer/NIOSwiftMUD"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"

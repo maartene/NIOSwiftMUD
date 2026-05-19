@@ -203,7 +203,7 @@ class CommandTests: XCTestCase {
     func test_GoCommand() async {
         let roomCount = await Room.count()
         XCTAssertGreaterThan(roomCount, 1)
-
+        
         var session = MockSession()
         let testusername = "Testuser_\(UUID())"
         var testuser = User(username: testusername, password: "password")
@@ -211,7 +211,7 @@ class CommandTests: XCTestCase {
         session.playerID = testuser.id // Simulate player successfully logged in.
         
         await testuser.save()
-
+        
         guard let room = await Room.find(testuser.currentRoomID) else {
             XCTFail("Should have found a room for the player.")
             return

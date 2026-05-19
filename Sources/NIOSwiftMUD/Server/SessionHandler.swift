@@ -62,6 +62,13 @@ final class SessionHandler: ChannelInboundHandler {
         }
     }
     
+    public func channelInactive(context: ChannelHandlerContext) {
+        if let session = SessionStorage.first(where: { ($0 as? MudSession)?.channel.remoteAddress == context.channel.remoteAddress }) {
+            SessionStorage.deleteSession(session)
+        }
+        context.fireChannelInactive()
+    }
+
     public func channelActive(context: ChannelHandlerContext) {
         let welcomeText = """
         Welcome to NIOSwiftMUD!

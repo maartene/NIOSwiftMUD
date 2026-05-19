@@ -27,6 +27,10 @@ let package = Package(
             ]),
         .testTarget(
             name: "NIOSwiftMUDTests",
-            dependencies: ["NIOSwiftMUD"]),
+            dependencies: [
+                "NIOSwiftMUD",
+                .product(name: "NIO", package: "swift-nio"),
+                .product(name: "NIOSSH", package: "swift-nio-ssh")
+            ]),
     ]
 )
