@@ -98,7 +98,7 @@ import Testing
     @Test func `create user command fails with existing username`() async {
         let session = MockSession()
 
-        let testusername = userRepository.testUser.username
+        let testusername = userRepository.userInStartingRoom.username
 
         let command = CreateUserCommand(session: session, username: testusername, password: "123456")
 
@@ -128,7 +128,7 @@ import Testing
         }
 
         #expect(result[0].session.id == session.id)
-        #expect(result[0].session.playerID == userRepository.testUser.id)
+        #expect(result[0].session.playerID == userRepository.userInStartingRoom.id)
         #expect(result[0].message == "Welcome back, test_user!")
     }
 
@@ -153,7 +153,7 @@ import Testing
     @Test func lookCommand() async {
         var session = MockSession()
 
-        session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
+        session.playerID = userRepository.userInStartingRoom.id // Simulate player successfully logged in.
 
         let command = LookCommand(session: session)
 
@@ -180,9 +180,9 @@ import Testing
         #expect(roomCount > 1)
 
         var session = MockSession()
-        session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
+        session.playerID = userRepository.userInStartingRoom.id // Simulate player successfully logged in.
 
-        guard let room = await roomRepository.find(userRepository.testUser.currentRoomID) else {
+        guard let room = await roomRepository.find(userRepository.userInStartingRoom.currentRoomID) else {
             Issue.record("Should have found a room for the player.")
             return
         }
@@ -223,12 +223,9 @@ import Testing
 
     @Test func `go command fails if door is closed`() async throws {
         var session = MockSession()
-        let currentRoomID = UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!
-        let testuser = User(username: "a user", password: "password", currentRoomID: currentRoomID)
-        session.playerID = testuser.id // Simulate player successfully logged in.
+        session.playerID = userRepository.userNearClosedDoor.id
+        let currentRoomID = userRepository.userNearClosedDoor.currentRoomID
         
-        await userRepository.save(testuser)
-
         let command = GoCommand(session: session, direction: .East)
 
         let result = await command.execute(in: world)
@@ -247,10 +244,8 @@ import Testing
 
     @Test func `go command fails if there is no exit in direction`() async throws {
         var session = MockSession()
-        let currentRoomID = UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!
-        let testuser = User(username: "a user", password: "password", currentRoomID: currentRoomID)
-        session.playerID = testuser.id // Simulate player successfully logged in.
-        await userRepository.save(testuser)
+        let currentRoomID = userRepository.userNearClosedDoor.currentRoomID
+        session.playerID = userRepository.userNearClosedDoor.id
 
         let command = GoCommand(session: session, direction: .North)
 
@@ -482,11 +477,16 @@ struct RoomRepositoryStub: Repository<Room> {
 
 final class InmemoryUserRepository: UserRepository {
     private var users = [
-        User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
+        User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID),
+        User(id: UUID(), username: "a user", password: "123456", currentRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!),
     ]
     
-    var testUser: User {
+    var userInStartingRoom: User {
         users[0]
+    }
+    
+    var userNearClosedDoor: User {
+        users[1]
     }
     
     func find(_ id: UUID?) async -> NIOSwiftMUD.User? {
