@@ -29,4 +29,25 @@ struct CreateUserCommand: MudCommand {
         
         return [response]
     }
+    
+    func execute(in world: World) async -> [MudResponse] {
+        var updatedSession = session
+        let response: MudResponse
+        
+        do {
+            guard await world.userRepository.find(username) == nil else {
+                throw UserError.usernameAlreadyTaken
+            }
+            
+            let newUser = try await User.create(username: username, password: password, currentRoomID: Room.STARTER_ROOM_ID)
+            await world.userRepository.save(newUser)
+            
+            updatedSession.playerID = newUser.id
+            response = MudResponse(session: updatedSession, message: "Welcome, \(newUser.username)!")
+        } catch {
+            response = MudResponse(session: updatedSession, message: "Error creating user: \(error)")
+        }
+        
+        return [response]
+    }
 }

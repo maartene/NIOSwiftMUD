@@ -6,18 +6,19 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import NIOSwiftMUD
 
-class CommandTests: XCTestCase {
+@Suite struct CommandTests {
+    let userRepository = InmemoryUserRepository()
+    let roomRepository = RoomRepositoryStub()
+    let world: World
+    
+    init() {
+        world = World(roomRepository: roomRepository, userRepository: userRepository)
+    }
     
     // MARK: Helpders
-    override func setUp() {
-        User.persist = false
-        Room.persist = false
-        Door.persist = false
-    }
-
     struct MockSession: Session {
         let id: UUID
         var playerID: UUID?
@@ -30,7 +31,7 @@ class CommandTests: XCTestCase {
     }
 
     // MARK: Generic Tests
-    func test_commands_thatRequireLogin_failWhenNotLoggedIn() async {
+    @Test func `commands that require login fail when not logged in`() async throws {
         let session = MockSession()
         let commandsThatRequireLogin = MudCommandFactory().allCommands.filter { $0.requiresLogin }
 
@@ -38,193 +39,180 @@ class CommandTests: XCTestCase {
             let arguments = Array(repeating: "north", count: commandType.expectedArgumentCount)
             let command = commandType.create(arguments, session: session)
 
-            guard let result = await command?.execute() else {
-                XCTFail("Command \(commandType) should not be nil.")
-                return
-            }
+            let result = try #require(await command?.execute(in: world), "Command \(commandType) should not be nil.")
 
             guard result.count > 0 else {
-                XCTFail("Expected at least 1 MudResponse.")
+                Issue.record("Expected at least 1 MudResponse.")
                 return
             }
 
-            XCTAssertEqual(result[0].message, command?.couldNotFindPlayerMessage ?? "")
+            #expect(result[0].message == command?.couldNotFindPlayerMessage)
         }
     }
     
     // MARK: HelpCommand
-    func test_HelpCommand() async {
+    @Test func helpCommand() async {
         let session = MockSession()
         let command = HelpCommand(session: session)
         
-        let result = await command.execute()
+        let result = await command.execute(in: world)
         
-        XCTAssertEqual(result.first?.session.id, session.id)
-        XCTAssertEqual(result.first?.message, HelpCommand.HELP_STRING)
+        #expect(result.first?.session.id == session.id)
+        #expect(result.first?.message == HelpCommand.HELP_STRING)
     }
     
     // MARK: CloseCommand
-    func test_CloseCommand() async {
+    @Test func closeCommand() async {
         let session = MockSession()
         let command = CloseCommand(session: session)
         
-        XCTAssertFalse(session.shouldClose)
+        #expect(session.shouldClose == false)
         
-        let result = await command.execute()
+        let result = await command.execute(in: world)
         
-        XCTAssertTrue(result.first?.session.shouldClose ?? false)
+        #expect(result.first?.session.shouldClose ?? false)
     }
     
     // MARK: CreateUserCommand
-    func test_CreateUserCommand() async {
+    @Test func createUserCommand() async throws {
         let session = MockSession()
         
         let testusername = "Testuser_\(UUID())"
         let command = CreateUserCommand(session: session, username: testusername, password: "password")
         
-        let existingUser = await User.first(username: testusername)
-        XCTAssertNil(existingUser)
+        try #require(await User.first(username: testusername) == nil)
         
-        let result = await command.execute()
+        let result = await command.execute(in: world)
         
-        guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
-            return
-        }
+        try #require (result.count > 0)
         
-        XCTAssertEqual(result[0].session.id, session.id)
+        #expect(result[0].session.id == session.id)
         
-        guard let existingUserAfterSave = await User.first(username: testusername) else {
-            XCTFail("Should have found recently created testuser: \(testusername)")
-            return
-        }
+        let existingUserAfterSave = try #require(await User.first(username: testusername), "Should have found recently created testuser: \(testusername)")
         
-        XCTAssertEqual(result[0].session.playerID, existingUserAfterSave.id)
-        XCTAssertEqual(result[0].message, "Welcome, \(testusername)!")
+        #expect(result[0].session.playerID == existingUserAfterSave.id)
+        #expect(result[0].message == "Welcome, \(testusername)!")
     }
     
-    func test_CreateUserCommand_fails_withExistingUsername() async {
+    @Test func `create user command fails with existing username`() async {
         let session = MockSession()
-        
-        let testusername = "Testuser_\(UUID())"
-        
-        let testuser = User(username: testusername, password: "password")
-        await testuser.save()
-        
+
+        let testusername = userRepository.testUser.username
+
         let command = CreateUserCommand(session: session, username: testusername, password: "123456")
-        
-        let result = await command.execute()
-        
+
+        let result = await command.execute(in: world)
+
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             return
         }
-        
-        XCTAssertEqual(result[0].session.id, session.id)
-        XCTAssertNil(result[0].session.playerID)
-        XCTAssertEqual(result[0].message, "Error creating user: usernameAlreadyTaken")
+
+        #expect(result[0].session.id == session.id)
+        #expect(result[0].session.playerID == nil)
+        #expect(result[0].message == "Error creating user: usernameAlreadyTaken")
     }
-    
+
     // MARK: LoginUserCommand
-    func test_LoginUserCommand() async {
+    @Test func loginUserCommand() async {
         let session = MockSession()
-        
+
         let testusername = "Testuser_\(UUID())"
         let testPassword = "FooBar123"
         let testuser = User(username: testusername, password: testPassword)
         await testuser.save()
-        
+
         let command = LoginCommand(session: session, username: testusername, password: testPassword)
-        
-        let result = await command.execute()
-        
+
+        let result = await command.execute(in: world)
+
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             return
         }
-        
-        XCTAssertEqual(result[0].session.id, session.id)
-        XCTAssertEqual(result[0].session.playerID, testuser.id)
-        XCTAssertEqual(result[0].message, "Welcome back, \(testusername)!")
+
+        #expect(result[0].session.id == session.id)
+        #expect(result[0].session.playerID == testuser.id)
+        #expect(result[0].message == "Welcome back, \(testusername)!")
     }
-    
-    func test_LoginUserCommand_fails_withWrongPassword() async {
+
+    @Test func loginUserCommandFailsWithWrongPassword() async {
         let session = MockSession()
-        
+
         let testusername = "Testuser_\(UUID())"
         let testPassword = "FooBar123"
         let testuser = User(username: testusername, password: testPassword)
         await testuser.save()
-        
+
         let command = LoginCommand(session: session, username: testusername, password: "invalid"+testPassword)
-        
+
         let result = await command.execute()
-        
+
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             return
         }
-        
-        XCTAssertEqual(result[0].session.id, session.id)
-        XCTAssertNil(result[0].session.playerID)
-        XCTAssertEqual(result[0].message, "Error logging in user: passwordMismatch")
+
+        #expect(result[0].session.id == session.id)
+        #expect(result[0].session.playerID == nil)
+        #expect(result[0].message == "Error logging in user: passwordMismatch")
     }
-    
+
     // MARK: LookCommand
-    func test_LookCommand() async {
+    @Test func lookCommand() async {
         let roomRepository = RoomRepositoryStub()
         let userRepository = UserRepositoryStub()
         let world = World(roomRepository: roomRepository, userRepository: userRepository)
-        
+
         var session = MockSession()
 
         session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
 
         let command = LookCommand(session: session)
-        
+
         let result = await command.execute(in: world)
-        
+
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             return
         }
-        
+
         guard let defaultRoom = await roomRepository.find(Room.STARTER_ROOM_ID) else {
-            XCTFail("Should have found a starter room.")
+            Issue.record("Should have found a starter room.")
             return
         }
-        
+
         let compareString = String(defaultRoom.name)
         let receivedString = String(result[0].message.prefix(compareString.count))
-        XCTAssertEqual(receivedString, compareString)
+        #expect(receivedString == compareString)
     }
-    
+
     // MARK: GoCommand
-    func test_GoCommand() async {
+    @Test func goCommand() async {
         let roomRepository = RoomRepositoryStub()
         let userRepository = InmemoryUserRepository()
         let world = World(roomRepository: roomRepository, userRepository: userRepository)
         let roomCount = await roomRepository.count()
-        XCTAssertGreaterThan(roomCount, 1)
-        
+        #expect(roomCount > 1)
+
         var session = MockSession()
         session.playerID = userRepository.testUser.id // Simulate player successfully logged in.
-        
+
         guard let room = await roomRepository.find(userRepository.testUser.currentRoomID) else {
-            XCTFail("Should have found a room for the player.")
+            Issue.record("Should have found a room for the player.")
             return
         }
-        
+
         guard room.exits.count > 0 else {
-            XCTFail("Should have found at least 1 exit in the room.")
+            Issue.record("Should have found at least 1 exit in the room.")
             return
-        }   
+        }
 
         guard let firstExit = room.exits.first else {
-            XCTFail("Should have found at least 1 exit in the room.")
+            Issue.record("Should have found at least 1 exit in the room.")
             return
         }
-        
+
         // Make sure the exit is passable, by opening any door if one exists.
         if var door = await Door.find(firstExit.doorID) {
             door.isOpen = true
@@ -237,21 +225,21 @@ class CommandTests: XCTestCase {
         let result = await command.execute(in: world)
 
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             await Room.storage.reloadStorage()
             return
         }
 
         guard let updatedPlayer = await userRepository.find(session.playerID) else {
-            XCTFail("Player should have been found.")
+            Issue.record("Player should have been found.")
             return
         }
-        XCTAssertEqual(updatedPlayer.currentRoomID, room.exits[0].targetRoomID)
+        #expect(updatedPlayer.currentRoomID == room.exits[0].targetRoomID)
     }
 
-    func test_GoCommand_fails_ifDoorIsClosed() async {
+    @Test func goCommandFailsIfDoorIsClosed() async {
         let closedDoor = Door(id: UUID(), isOpen: false)
-        
+
         let room1ID = UUID()
         let room2ID = UUID()
 
@@ -266,7 +254,7 @@ class CommandTests: XCTestCase {
         var testuser = User(username: testusername, password: "password")
         testuser.currentRoomID = room1ID
         session.playerID = testuser.id // Simulate player successfully logged in.
-        
+
         await testuser.save()
 
         let command = GoCommand(session: session, direction: .North)
@@ -274,22 +262,22 @@ class CommandTests: XCTestCase {
         let result = await command.execute()
 
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             await Room.storage.reloadStorage()
             return
         }
 
         guard let updatedPlayer = await User.find(session.playerID) else {
-            XCTFail("Player should have been found.")
+            Issue.record("Player should have been found.")
             return
         }
-        XCTAssertEqual(result[0].message, "The exit is impassable.")
-        XCTAssertEqual(updatedPlayer.currentRoomID, room1ID)
+        #expect(result[0].message == "The exit is impassable.")
+        #expect(updatedPlayer.currentRoomID == room1ID)
     }
 
-    func test_GoCommand_fails_ifThereIsNotExitInDirection() async {
+    @Test func goCommandFailsIfThereIsNoExitInDirection() async {
         let closedDoor = Door(id: UUID(), isOpen: false)
-        
+
         let room1ID = UUID()
         let room2ID = UUID()
 
@@ -304,7 +292,7 @@ class CommandTests: XCTestCase {
         var testuser = User(username: testusername, password: "password")
         testuser.currentRoomID = room1ID
         session.playerID = testuser.id // Simulate player successfully logged in.
-        
+
         await testuser.save()
 
         let command = GoCommand(session: session, direction: .West)
@@ -312,24 +300,24 @@ class CommandTests: XCTestCase {
         let result = await command.execute()
 
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             await Room.storage.reloadStorage()
             return
         }
 
         guard let updatedPlayer = await User.find(session.playerID) else {
-            XCTFail("Player should have been found.")
+            Issue.record("Player should have been found.")
             return
         }
-        XCTAssertEqual(result[0].message, "No exit found in direction \(command.direction).")
-        XCTAssertEqual(updatedPlayer.currentRoomID, room1ID)
+        #expect(result[0].message == "No exit found in direction \(command.direction).")
+        #expect(updatedPlayer.currentRoomID == room1ID)
     }
-    
+
     // MARK: OpenDoorCommand
-    func test_openDoor() async {
+    @Test func openDoor() async {
         let closedDoor = Door(id: UUID(), isOpen: false)
         await closedDoor.save()
-        
+
         let room1ID = UUID()
         let room2ID = UUID()
 
@@ -344,7 +332,7 @@ class CommandTests: XCTestCase {
         var testuser = User(username: testusername, password: "password")
         testuser.currentRoomID = room1ID
         session.playerID = testuser.id // Simulate player successfully logged in.
-        
+
         await testuser.save()
 
         let command = OpenDoorCommand(session: session, direction: .North)
@@ -352,25 +340,22 @@ class CommandTests: XCTestCase {
         let result = await command.execute()
 
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             return
         }
 
         guard let updatedDoor = await Door.find(closedDoor.id) else {
-            XCTFail("Door should have been found.")
+            Issue.record("Door should have been found.")
             return
         }
 
-        guard updatedDoor.isOpen else {
-            XCTFail("Door should have been opened.")
-            return
-        }
+        #expect(updatedDoor.isOpen)
     }
 
-    func test_openDoor_fails_ifDoorIsAlreadyOpen() async {
+    @Test func openDoorFailsIfDoorIsAlreadyOpen() async {
         let openDoor = Door(id: UUID(), isOpen: true)
         await openDoor.save()
-        
+
         let room1ID = UUID()
         let room2ID = UUID()
 
@@ -385,7 +370,7 @@ class CommandTests: XCTestCase {
         var testuser = User(username: testusername, password: "password")
         testuser.currentRoomID = room1ID
         session.playerID = testuser.id // Simulate player successfully logged in.
-        
+
         await testuser.save()
 
         let command = OpenDoorCommand(session: session, direction: .North)
@@ -393,15 +378,15 @@ class CommandTests: XCTestCase {
         let result = await command.execute()
 
         guard result.count > 0 else {
-            XCTFail("Expected at least 1 MudResponse.")
+            Issue.record("Expected at least 1 MudResponse.")
             return
         }
 
-        XCTAssertEqual(result[0].message, "Door in direction \(command.direction) is already open.")
+        #expect(result[0].message == "Door in direction \(command.direction) is already open.")
     }
-    
+
     // MARK: SayCommand
-    func test_SayCommand() async {
+    @Test func sayCommand() async {
         var session = MockSession()
         let testusername = "Testuser_\(UUID())"
         var testuser = User(username: testusername, password: "password")
@@ -417,22 +402,22 @@ class CommandTests: XCTestCase {
         await testuser2.save()
 
         let command = SayCommand(session: session, sentence: "Hello World!")
-        
+
         let result = await command.execute()
 
         guard result.count > 1 else {
-            XCTFail("Expected at least 2 MudResponses.")
+            Issue.record("Expected at least 2 MudResponses.")
             return
         }
 
-        XCTAssertEqual(result[0].message, "You say: \(command.sentence)")
-        XCTAssertEqual(result[1].message, "\(testusername) says: \(command.sentence)")
+        #expect(result[0].message == "You say: \(command.sentence)")
+        #expect(result[1].message == "\(testusername) says: \(command.sentence)")
     }
-    
+
     // MARK: WhisperCommand
-    func test_WhisperCommand() async {
+    @Test func whisperCommand() async {
         // Lots of setup needed: create three users, including sessions
-        
+
         // testuser1
         var session = MockSession()
         let testusername = "Testuser_\(UUID())"
@@ -443,7 +428,7 @@ class CommandTests: XCTestCase {
         await testuser.save()
 
         defer { SessionStorage.deleteSession(session) } // Let's make sure we cleanup the sessions we created.
-    
+
         // testuser2
         var session2 = MockSession()
         let testusername2 = "Testuser2_\(UUID())"
@@ -453,9 +438,9 @@ class CommandTests: XCTestCase {
         session2.currentString = "testuser2"
         SessionStorage.replaceOrStoreSessionSync(session2)
         await testuser2.save()
-        
+
         defer { SessionStorage.deleteSession(session2) } // Let's make sure we cleanup the sessions we created.
-        
+
         // testuser3
         var session3 = MockSession()
         let testusername3 = "Testuser3_\(UUID())"
@@ -465,38 +450,37 @@ class CommandTests: XCTestCase {
         session3.currentString = "testuser3"
         SessionStorage.replaceOrStoreSessionSync(session3)
         await testuser3.save()
-        
+
         defer { SessionStorage.deleteSession(session3) } // Let's make sure we cleanup the sessions we created.
-        
+
         // the actual SUT
         let command = WhisperCommand(session: session, targetPlayerName: testusername3, message: "For your ears only")
-        
+
         let result = await command.execute()
-                
+
         // Validate the results
         guard result.count > 2 else {
-            XCTFail("Expected at least 3 MudResponses.")
+            Issue.record("Expected at least 3 MudResponses.")
             return
         }
 
-        XCTAssertEqual(result[0].message, "You whisper to \(testusername3): \(command.message)")
-        
+        #expect(result[0].message == "You whisper to \(testusername3): \(command.message)")
+
         guard let messageForTestUser2 = result.first(where: { $0.session.playerID == testuser2.id }) else {
-            XCTFail("There should be a message for testuser2")
+            Issue.record("There should be a message for testuser2")
             return
         }
-        
+
         guard let messageForTestUser3 = result.first(where: { $0.session.playerID == testuser3.id }) else {
-            XCTFail("There should be a message for testuser3")
+            Issue.record("There should be a message for testuser3")
             return
         }
-        
-        XCTAssertEqual(messageForTestUser2.message, "\(testusername) whispers something to \(testuser3.username), but you can't quite make out what is said.")
-        
-        XCTAssertEqual(messageForTestUser3.message, "\(testusername) whispers to you: \(command.message)")
+
+        #expect(messageForTestUser2.message == "\(testusername) whispers something to \(testuser3.username), but you can't quite make out what is said.")
+        #expect(messageForTestUser3.message == "\(testusername) whispers to you: \(command.message)")
     }
 
-    func test_WhisperCommand_returnsFunnyMessage_when_YouTargetYourself() async {
+    @Test func whisperCommandReturnsFunnyMessageWhenYouTargetYourself() async {
         var session = MockSession()
         let testusername = "Testuser_\(UUID())"
         var testuser = User(username: testusername, password: "password")
@@ -506,15 +490,15 @@ class CommandTests: XCTestCase {
         await testuser.save()
 
         defer { SessionStorage.deleteSession(session) } // Let's make sure we cleanup the sessions we created.
-    
+
         // the actual SUT
         let command = WhisperCommand(session: session, targetPlayerName: testusername, message: "For your ears only")
-        
+
         let result = await command.execute()
-                
+
         // Validate the results
-        XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result[0].message, "Talking to yourself much, eh?")
+        #expect(result.count == 1)
+        #expect(result[0].message == "Talking to yourself much, eh?")
     }
 }
 
@@ -588,4 +572,7 @@ final class InmemoryUserRepository: Repository<User> {
         }
     }
     
+    func find(_ username: String) async -> User? {
+        users.first { $0.username == username }
+    }
 }
