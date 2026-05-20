@@ -100,7 +100,7 @@ import Testing
         let testusername = "Testuser_\(UUID())"
         let command = CreateUserCommand(session: session, username: testusername, password: "password")
         
-        try #require(await User.first(username: testusername) == nil)
+        try #require(await world.userRepository.find(testusername) == nil)
         
         let result = await command.execute(in: world)
         
@@ -108,7 +108,7 @@ import Testing
         
         #expect(result[0].session.id == session.id)
         
-        let existingUserAfterSave = try #require(await User.first(username: testusername), "Should have found recently created testuser: \(testusername)")
+        let existingUserAfterSave = try #require(await world.userRepository.find(testusername), "Should have found recently created testuser: \(testusername)")
         
         #expect(result[0].session.playerID == existingUserAfterSave.id)
         #expect(result[0].message == "Welcome, \(testusername)!")

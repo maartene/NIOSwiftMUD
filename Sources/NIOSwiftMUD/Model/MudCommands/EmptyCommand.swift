@@ -9,7 +9,7 @@ struct EmptyCommand: MudCommand {
         EmptyCommand(session: session)
     }
 
-    func execute() async -> [MudResponse] {
+    func execute(in world: World) async -> [MudResponse] {
         return [MudResponse(session: session, message: "")]
     }
 }

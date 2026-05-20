@@ -9,8 +9,8 @@ struct CloseCommand: MudCommand {
         return CloseCommand(session: session)
     }
 
-    func execute() async -> [MudResponse] {
-        var updatedSession = session 
+    func execute(in world: World) async -> [MudResponse] {
+        var updatedSession = session
         updatedSession.shouldClose = true
         return [MudResponse(session: updatedSession, message: "Good Bye!")]
     }

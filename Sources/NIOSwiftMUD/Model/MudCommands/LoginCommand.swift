@@ -14,29 +14,6 @@ struct LoginCommand: MudCommand {
 
         return LoginCommand(session: session, username: arguments[0], password: arguments[1])
     }
-
-    func execute() async -> [MudResponse] {
-        var updatedSession = session
-        let response: MudResponse
-        
-        var notifications = [MudResponse]()
-        
-        do {
-            let existingUser = try await User.login(username: username, password: password)
-            updatedSession.playerID = existingUser.id
-            response = MudResponse(session: updatedSession, message: "Welcome back, \(existingUser.username)!")
-            
-            if existingUser.currentRoomID != nil {
-                notifications = await sendMessageToOtherPlayersInRoom(message: "\(existingUser.username) materialized out of thin air!", player: existingUser)
-            }
-        } catch {
-            response = MudResponse(session: updatedSession, message: "Error logging in user: \(error)")
-        }
-        
-        var result = [response]
-        result.append(contentsOf: notifications)
-        return result
-    }
     
     func execute(in world: World) async -> [MudResponse] {
         var updatedSession = session
@@ -57,7 +34,7 @@ struct LoginCommand: MudCommand {
             response = MudResponse(session: updatedSession, message: "Welcome back, \(existingUser.username)!")
             
             if existingUser.currentRoomID != nil {
-                notifications = await sendMessageToOtherPlayersInRoom(message: "\(existingUser.username) materialized out of thin air!", player: existingUser)
+                notifications = await world.sendMessageToOtherPlayersInRoom(message: "\(existingUser.username) materialized out of thin air!", player: existingUser)
             }
         } catch {
             response = MudResponse(session: updatedSession, message: "Error logging in user: \(error)")

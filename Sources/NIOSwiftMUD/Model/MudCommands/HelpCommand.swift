@@ -37,7 +37,7 @@ struct HelpCommand: MudCommand {
         HelpCommand(session: session)
     }
 
-    func execute() async -> [MudResponse] {
+    func execute(in world: World) async -> [MudResponse] {
         return [MudResponse(session: session, message: Self.HELP_STRING)]
     }
 }

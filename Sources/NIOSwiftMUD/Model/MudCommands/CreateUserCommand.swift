@@ -14,21 +14,6 @@ struct CreateUserCommand: MudCommand {
 
         return CreateUserCommand(session: session, username: arguments[0], password: arguments[1])
     }
-
-    func execute() async -> [MudResponse] {
-        var updatedSession = session
-        let response: MudResponse
-        
-        do {
-            let newUser = try await User.create(username: username, password: password, currentRoomID: Room.STARTER_ROOM_ID)
-            updatedSession.playerID = newUser.id
-            response = MudResponse(session: updatedSession, message: "Welcome, \(newUser.username)!")
-        } catch {
-            response = MudResponse(session: updatedSession, message: "Error creating user: \(error)")
-        }
-        
-        return [response]
-    }
     
     func execute(in world: World) async -> [MudResponse] {
         var updatedSession = session
@@ -39,7 +24,7 @@ struct CreateUserCommand: MudCommand {
                 throw UserError.usernameAlreadyTaken
             }
             
-            let newUser = try await User.create(username: username, password: password, currentRoomID: Room.STARTER_ROOM_ID)
+            let newUser = User(username: username, password: password, currentRoomID: Room.STARTER_ROOM_ID)
             await world.userRepository.save(newUser)
             
             updatedSession.playerID = newUser.id

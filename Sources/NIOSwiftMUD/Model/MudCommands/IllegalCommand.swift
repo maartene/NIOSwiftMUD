@@ -10,7 +10,7 @@ struct IllegalCommand: MudCommand {
         IllegalCommand(session: session, passedInCommand: arguments.joined())
     }
 
-    func execute() async -> [MudResponse] {
+    func execute(in world: World) async -> [MudResponse] {
         return [MudResponse(session: session, message: "`\(passedInCommand)` is not a valid command.")]
     }
 }

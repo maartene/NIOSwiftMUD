@@ -7,10 +7,7 @@
 
 import Foundation
 
-struct Room: DBType {
-    static var storage: AwesomeDB<Room> = AwesomeDB()
-    static var persist = true
-    
+struct Room {
     let id: UUID
     
     let name: String
@@ -40,19 +37,6 @@ struct Exit: Codable {
     let direction: Direction
     let targetRoomID: UUID
     let doorID: UUID?
-    
-    func isPassable() async -> Bool {
-        guard let doorID else {
-            return true
-        }
-        
-        guard let door = await Door.find(doorID) else {
-            print("Could not find door with id: \(doorID).")
-            return false
-        }
-        
-        return door.isOpen
-    }
 }
 
 

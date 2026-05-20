@@ -74,12 +74,10 @@ extension SSHChannelData {
     }
 }
 
-struct SSHKey: DBType {
+struct SSHKey {
     enum SSHKeyError: Error {
         case invalidBase64String
     }
-    static var storage = AwesomeDB<SSHKey>()
-    static var persist = true
     
     let id: UUID
     let base64Key: String

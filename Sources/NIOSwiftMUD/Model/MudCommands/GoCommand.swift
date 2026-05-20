@@ -18,42 +18,6 @@ struct GoCommand: MudCommand {
         return GoCommand(session: session, direction: direction)
     }
 
-    func execute() async -> [MudResponse] {
-        guard var player = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
-        }
-        
-        guard let currentRoom = await Room.find(player.currentRoomID) else {
-            return  [MudResponse(session: session, message: "Cound not find room: \(String(describing: player.currentRoomID))")]
-        }
-        
-        guard let exit = currentRoom.exits.first(where: {$0.direction == direction} ) else {
-            return [MudResponse(session: session, message: "No exit found in direction \(direction).")]
-        }
-        
-        guard let targetRoom = await Room.find(exit.targetRoomID) else {
-            return [MudResponse(session: session, message: "Cound not find target room: \(String(describing: player.currentRoomID))")]
-        }
-        
-        guard await exit.isPassable() else {
-            return [MudResponse(session: session, message: "The exit is impassable.")]
-        }
-        
-        var response = [MudResponse]()
-        response.append(MudResponse(session: session, message: "You moved into a new room: \n \(targetRoom.formattedDescription)"))
-        
-        let exitMessages = await sendMessageToOtherPlayersInRoom(message: "\(player.username) has left the room.", player: player)
-        response.append(contentsOf: exitMessages)
-        
-        player.currentRoomID = exit.targetRoomID
-        await player.save()
-        
-        let enterMessages = await sendMessageToOtherPlayersInRoom(message: "\(player.username) entered the room.", player: player)
-        response.append(contentsOf: enterMessages)
-        
-        return response
-    }
-    
     func execute(in world: World) async -> [MudResponse] {
         guard var player = await world.userRepository.find(session.playerID) else {
             return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
@@ -71,20 +35,20 @@ struct GoCommand: MudCommand {
             return [MudResponse(session: session, message: "Cound not find target room: \(String(describing: player.currentRoomID))")]
         }
         
-        guard await exit.isPassable() else {
+        guard await world.exitIsPassable(exit) else {
             return [MudResponse(session: session, message: "The exit is impassable.")]
         }
         
         var response = [MudResponse]()
         response.append(MudResponse(session: session, message: "You moved into a new room: \n \(targetRoom.formattedDescription)"))
         
-        let exitMessages = await sendMessageToOtherPlayersInRoom(message: "\(player.username) has left the room.", player: player)
+        let exitMessages = await world.sendMessageToOtherPlayersInRoom(message: "\(player.username) has left the room.", player: player)
         response.append(contentsOf: exitMessages)
         
         player.currentRoomID = exit.targetRoomID
         await world.userRepository.save(player)
         
-        let enterMessages = await sendMessageToOtherPlayersInRoom(message: "\(player.username) entered the room.", player: player)
+        let enterMessages = await world.sendMessageToOtherPlayersInRoom(message: "\(player.username) entered the room.", player: player)
         response.append(contentsOf: enterMessages)
         
         return response

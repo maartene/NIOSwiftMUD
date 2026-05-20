@@ -11,7 +11,6 @@ protocol MudCommand {
     var session: Session { get }
 
     static func create(_ arguments: [String], session: Session) -> Self?
-    func execute() async -> [MudResponse]
     func execute(in world: World) async -> [MudResponse]
 }
 
@@ -22,29 +21,5 @@ extension MudCommand {
 
     var couldNotFindPlayerMessage: String {
         "Could not find player with id \(String(describing: session.playerID))."
-    }
-    
-    func execute(in world: World) async -> [MudResponse] {
-        await execute()
-    }
-}
-
-extension MudCommand {
-    func sendMessageToOtherPlayersInRoom(message: String, player: User) async -> [MudResponse] {
-        let allPlayersInRoom = await User.filter {
-            $0.currentRoomID == player.currentRoomID
-        }
-        
-        let otherPlayers = allPlayersInRoom.filter { $0.id != player.id }
-        
-        var result = [MudResponse]()
-        
-        otherPlayers.forEach { otherPlayer in
-            if let otherSession = SessionStorage.first(where: {$0.playerID == otherPlayer.id}) {
-                result.append(MudResponse(session: otherSession, message: message))
-            }
-        }
-        
-        return result
     }
 }

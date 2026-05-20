@@ -8,20 +8,20 @@ let world = makeExampleWorld()
 func main() async {
     let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     do {
-        let hostKey: NIOSSHPrivateKey
-        if let existingKey = await SSHKey.first(where: { _ in true }) {
-            hostKey = try existingKey.toNIOSSHPrivateKey()
-            print("Reusing existing hostkey with id: \(existingKey.id)")
-        } else {
-            let newKey = SSHKey.initRandomKey()
-            hostKey = try newKey.toNIOSSHPrivateKey()
-            await newKey.save()
-            print("Creating new hostkey with id: \(newKey.id)")
-        }
+//        let hostKey: NIOSSHPrivateKey
+//        if let existingKey = await SSHKey.first(where: { _ in true }) {
+//            hostKey = try existingKey.toNIOSSHPrivateKey()
+//            print("Reusing existing hostkey with id: \(existingKey.id)")
+//        } else {
+//            let newKey = SSHKey.initRandomKey()
+//            hostKey = try newKey.toNIOSSHPrivateKey()
+//            await newKey.save()
+//            print("Creating new hostkey with id: \(newKey.id)")
+//        }
                 
-//        let fixedKeyBase64b = "UIL9M6Utw/jiupzqq6F8EW4qySxAbgDS+wT7/RIjkJ4="
-//        let fixedKeyData = Data(base64Encoded: fixedKeyBase64b)!
-//        let hostKey = NIOSSHPrivateKey(ed25519Key: try! .init(rawRepresentation: fixedKeyData))
+        let fixedKeyBase64b = "UIL9M6Utw/jiupzqq6F8EW4qySxAbgDS+wT7/RIjkJ4="
+        let fixedKeyData = Data(base64Encoded: fixedKeyBase64b)!
+        let hostKey = NIOSSHPrivateKey(ed25519Key: try! .init(rawRepresentation: fixedKeyData))
         
         // sshChildChannelInitializer(_ channel: Channel, _ channelType: SSHChannelType)
         let bootstrap = ServerBootstrap(group: group)

@@ -29,6 +29,14 @@ struct World {
         
         return result
     }
+    
+    func exitIsPassable(_ exit: Exit) async -> Bool {
+        if let door = await doorRepository.find(exit.doorID) {
+            return door.isOpen
+        } else {
+            return true
+        }
+    }
 }
 
 

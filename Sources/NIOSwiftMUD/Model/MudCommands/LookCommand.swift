@@ -8,27 +8,6 @@ struct LookCommand: MudCommand {
     static func create(_ arguments: [String], session: Session) -> Self? {
         return LookCommand(session: session)
     }
-
-    func execute() async -> [MudResponse] {
-        guard let user = await User.find(session.playerID) else {
-            return [MudResponse(session: session, message: couldNotFindPlayerMessage)]
-        }
-        
-        guard let roomID = user.currentRoomID else {
-            return [MudResponse(session: session, message: "You are in LIMBO!\n")]
-        }
-        
-        guard let room = await Room.find(roomID) else {
-            return [MudResponse(session: session, message: "Could not find room with roomID \(roomID).\n")]
-        }
-        
-        let otherPlayersInRoom = await User.filter(where: {$0.currentRoomID == roomID})
-            .filter({$0.id != user.id})
-        
-        let playerString = "Players:\n" + otherPlayersInRoom.map {$0.username}.joined(separator: ", ")
-        
-        return [MudResponse(session: session, message: room.formattedDescription + playerString)]
-    }
     
     func execute(in world: World) async -> [MudResponse] {
         guard let user = await world.userRepository.find(session.playerID) else {
@@ -43,7 +22,7 @@ struct LookCommand: MudCommand {
             return [MudResponse(session: session, message: "Could not find room with roomID \(roomID).\n")]
         }
         
-        let otherPlayersInRoom = await User.filter(where: {$0.currentRoomID == roomID})
+        let otherPlayersInRoom = await world.userRepository.filter(where: {$0.currentRoomID == roomID})
             .filter({$0.id != user.id})
         
         let playerString = "Players:\n" + otherPlayersInRoom.map {$0.username}.joined(separator: ", ")
