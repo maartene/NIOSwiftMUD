@@ -3,6 +3,8 @@ import Foundation
 import NIOSSH
 import Dispatch
 
+let world = makeExampleWorld()
+
 func main() async {
     let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     do {
@@ -21,15 +23,19 @@ func main() async {
 //        let fixedKeyData = Data(base64Encoded: fixedKeyBase64b)!
 //        let hostKey = NIOSSHPrivateKey(ed25519Key: try! .init(rawRepresentation: fixedKeyData))
         
-        // This should be default behaviour, but let's be specific
-        User.persist = true
-        Room.persist = true
-        Door.persist = true
-                
+        // sshChildChannelInitializer(_ channel: Channel, _ channelType: SSHChannelType)
         let bootstrap = ServerBootstrap(group: group)
             // Pipeline
             .childChannelInitializer { channel in
-                channel.pipeline.addHandlers([NIOSSHHandler(role: .server(.init(hostKeys: [hostKey], userAuthDelegate: NoLoginDelegate(), globalRequestDelegate: MUDGlobalRequestDelegate())), allocator: channel.allocator, inboundChildChannelInitializer: sshChildChannelInitializer(_:_:)), ErrorHandler()])
+                channel.pipeline.addHandlers([
+                    NIOSSHHandler(role: .server(
+                        .init(hostKeys: [hostKey],
+                              userAuthDelegate: NoLoginDelegate(),
+                              globalRequestDelegate: MUDGlobalRequestDelegate())),
+                                  allocator: channel.allocator,
+                                  inboundChildChannelInitializer: { channel, channelType in   sshChildChannelInitializer(channel, channelType, world: world)
+                                  }),
+                    ErrorHandler()])
             }
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
             .serverChannelOption(ChannelOptions.socket(SocketOptionLevel(IPPROTO_TCP), TCP_NODELAY), value: 1)

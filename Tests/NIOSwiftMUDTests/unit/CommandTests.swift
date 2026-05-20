@@ -10,8 +10,13 @@ import Testing
 @testable import NIOSwiftMUD
 
 @Suite struct CommandTests {
-    let userRepository = InMemoryRepository(storage: [User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID),
-                                                      User(id: UUID(), username: "a user", password: "123456", currentRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!),])
+    static let userInStartingRoom = User(id: UUID(), username: "test_user", password: "password", currentRoomID: Room.STARTER_ROOM_ID)
+    static let userNearClosedDoor = User(id: UUID(), username: "a user", password: "123456", currentRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!)
+    static let closedDoor = Door(id: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!, isOpen: false)
+    
+    let userRepository = InMemoryRepository(storage: [
+        Self.userInStartingRoom, Self.userNearClosedDoor
+    ])
     let roomRepository = InMemoryRepository(storage: [
         Room(id: Room.STARTER_ROOM_ID, name: "Starter room", description: "Nothing interesting here", exits: [
             Exit(direction: .North, targetRoomID: UUID(uuidString: "21C9D03A-ADEA-4120-A126-406C1D841BED")!, doorID: nil)
@@ -26,7 +31,7 @@ import Testing
             Exit(direction: .West, targetRoomID: UUID(uuidString: "E9AFECD5-4E81-453A-84F3-E709D3E908F2")!, doorID: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!)
         ]),
     ])
-    let doorRepository = InMemoryRepository(storage: [Door(id: UUID(uuidString: "41D5047C-2DC0-42D0-B1F7-3A2B241B3F23")!, isOpen: false)])
+    let doorRepository = InMemoryRepository(storage: [ Self.closedDoor ])
     let world: World
     
     init() {
@@ -112,7 +117,7 @@ import Testing
     @Test func `create user command fails with existing username`() async {
         let session = MockSession()
 
-        let testusername = userRepository.userInStartingRoom.username
+        let testusername = Self.userInStartingRoom.username
 
         let command = CreateUserCommand(session: session, username: testusername, password: "123456")
 
@@ -142,7 +147,7 @@ import Testing
         }
 
         #expect(result[0].session.id == session.id)
-        #expect(result[0].session.playerID == userRepository.userInStartingRoom.id)
+        #expect(result[0].session.playerID == Self.userInStartingRoom.id)
         #expect(result[0].message == "Welcome back, test_user!")
     }
 
@@ -166,7 +171,7 @@ import Testing
     // MARK: LookCommand
     @Test func lookCommand() async throws {
         var session = MockSession()
-        session.playerID = userRepository.userInStartingRoom.id // Simulate player successfully logged in.
+        session.playerID = Self.userInStartingRoom.id // Simulate player successfully logged in.
 
         let command = LookCommand(session: session)
         
@@ -187,9 +192,9 @@ import Testing
         #expect(roomCount > 1)
 
         var session = MockSession()
-        session.playerID = userRepository.userInStartingRoom.id // Simulate player successfully logged in.
+        session.playerID = Self.userInStartingRoom.id // Simulate player successfully logged in.
 
-        let room = try #require(await roomRepository.find(userRepository.userInStartingRoom.currentRoomID), "Should have found a room for the player.")
+        let room = try #require(await roomRepository.find(Self.userInStartingRoom.currentRoomID), "Should have found a room for the player.")
 
         try #require(room.exits.isEmpty == false, "Should have found at least 1 exit in the room.")
         
@@ -208,8 +213,8 @@ import Testing
 
     @Test func `go command fails if door is closed`() async throws {
         var session = MockSession()
-        session.playerID = userRepository.userNearClosedDoor.id
-        let currentRoomID = userRepository.userNearClosedDoor.currentRoomID
+        session.playerID = Self.userNearClosedDoor.id
+        let currentRoomID = Self.userNearClosedDoor.currentRoomID
         
         let command = GoCommand(session: session, direction: .East)
 
@@ -225,8 +230,8 @@ import Testing
 
     @Test func `go command fails if there is no exit in direction`() async throws {
         var session = MockSession()
-        let currentRoomID = userRepository.userNearClosedDoor.currentRoomID
-        session.playerID = userRepository.userNearClosedDoor.id
+        let currentRoomID = Self.userNearClosedDoor.currentRoomID
+        session.playerID = Self.userNearClosedDoor.id
 
         let command = GoCommand(session: session, direction: .North)
 
@@ -241,24 +246,25 @@ import Testing
     // MARK: OpenDoorCommand
     @Test func openDoor() async throws {
         var session = MockSession()
-        session.playerID = userRepository.userNearClosedDoor.id
+        session.playerID = Self.userNearClosedDoor.id
         
         let command = OpenDoorCommand(session: session, direction: .East)
 
         let result = await command.execute(in: world)
 
         try #require(result.isEmpty == false, "Expected at least 1 MudResponse.")
-
-        #expect(doorRepository.closedDoor.isOpen)
+        
+        let updatedDoor = try #require(await doorRepository.find(Self.closedDoor.id))
+        #expect(updatedDoor.isOpen)
     }
 
     @Test func openDoorFailsIfDoorIsAlreadyOpen() async throws {
-        var openDoor = doorRepository.closedDoor
+        var openDoor = Self.closedDoor
         openDoor.isOpen = true
         await doorRepository.save(openDoor)
 
         var session = MockSession()
-        session.playerID = userRepository.userNearClosedDoor.id
+        session.playerID = Self.userNearClosedDoor.id
 
         let command = OpenDoorCommand(session: session, direction: .East)
 
@@ -354,7 +360,7 @@ import Testing
 
     @Test func whisperCommandReturnsFunnyMessageWhenYouTargetYourself() async {
         var session = MockSession()
-        session.playerID = userRepository.userInStartingRoom.id
+        session.playerID = Self.userInStartingRoom.id
 
         // the actual SUT
         let command = WhisperCommand(session: session, targetPlayerName: "test_user", message: "For your ears only")
@@ -364,49 +370,5 @@ import Testing
         // Validate the results
         #expect(result.count == 1)
         #expect(result[0].message == "Talking to yourself much, eh?")
-    }
-}
-
-final class InMemoryRepository<T: Identifiable>: Repository<T> {
-    private var storage: [T] = []
-    
-    init(storage: [T]) {
-        self.storage = storage
-    }
-    
-    func find(_ id: T.ID?) async -> T? {
-        storage.first(where: { $0.id == id })
-    }
-        
-    func count() async -> Int {
-        storage.count
-    }
-    
-    func save(_ object: T) async {
-        if let existingIndex = storage.firstIndex(where: { object.id == $0.id   }) {
-            storage[existingIndex] = object
-        } else {
-            storage.append(object)
-        }
-    }
-    
-    func filter(where predicate: (T) -> Bool) async -> [T] {
-        storage.filter(predicate)
-    }
-}
-
-extension InMemoryRepository where T == Door {
-    var closedDoor: Door {
-        storage[0]
-    }
-}
-
-extension InMemoryRepository where T == User {
-    var userInStartingRoom: User {
-        storage[0]
-    }
-    
-    var userNearClosedDoor: User {
-        storage[1]
     }
 }

@@ -45,18 +45,18 @@ final class NoLoginDelegate: NIOSSHServerUserAuthenticationDelegate {
 /// Adds the MUD business-logic handlers to a channel synchronously.
 /// Use this in tests (EmbeddedChannel) and within the event loop in production.
 /// sshChildChannelInitializer prepends BackPressureHandler for real TCP connections.
-func configureMUDPipeline(_ channel: Channel) throws {
+func configureMUDPipeline(_ channel: Channel, world: World) throws {
     try channel.pipeline.syncOperations.addHandlers([
-        SessionHandler(), VerbHandler(), ParseHandler(), ResponseHandler()
+        SessionHandler(), VerbHandler(), ParseHandler(world: world), ResponseHandler()
     ])
 }
 
-func sshChildChannelInitializer(_ channel: Channel, _ channelType: SSHChannelType) -> EventLoopFuture<Void> {
+func sshChildChannelInitializer(_ channel: Channel, _ channelType: SSHChannelType, world: World) -> EventLoopFuture<Void> {
     switch channelType {
     case .session:
         do {
             try channel.pipeline.syncOperations.addHandler(BackPressureHandler())
-            try configureMUDPipeline(channel)
+            try configureMUDPipeline(channel, world: world)
             return channel.eventLoop.makeSucceededVoidFuture()
         } catch {
             return channel.eventLoop.makeFailedFuture(error)

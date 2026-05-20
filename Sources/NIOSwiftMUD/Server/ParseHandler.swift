@@ -9,6 +9,11 @@ import Foundation
 import NIO
 
 final class ParseHandler: ChannelInboundHandler {
+    private let world: World
+    
+    init(world: World) {
+        self.world = world
+    }
     
     typealias InboundIn = MudCommand
     typealias InboundOut = [MudResponse]
@@ -47,6 +52,6 @@ final class ParseHandler: ChannelInboundHandler {
             return [MudResponse(session: mudCommand.session, message: "You need to be logged in to use this command.")]
         }
         
-        return await mudCommand.execute()
+        return await mudCommand.execute(in: world)
     }
 }

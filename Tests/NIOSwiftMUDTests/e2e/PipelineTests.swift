@@ -9,9 +9,10 @@ import Foundation
 // Serialized because tests share the global SessionStorage via EmbeddedChannel remoteAddress.
 @Suite(.serialized)
 struct PipelineTests {
-
+    let world = makeExampleWorld()
+    
     @Test func connectReceivesWelcomeMessage() throws {
-        let channel = try makeConnectedChannel(port: 0)
+        let channel = try makeConnectedChannel(port: 0, world: world)
         defer { _ = try? channel.finish(acceptAlreadyClosed: true) }
 
         #expect(try collectOutbound(from: channel).joined().contains("Welcome to NIOSwiftMUD!"))
@@ -21,7 +22,7 @@ struct PipelineTests {
     // draining the sync handlers, we yield once to let the Task complete, then
     // drain the embedded event loop again so the response reaches the outbound buffer.
     @Test func typingHelpReceivesHelpText() async throws {
-        let channel = try makeConnectedChannel(port: 0)
+        let channel = try makeConnectedChannel(port: 0, world: world)
         defer { _ = try? channel.finish(acceptAlreadyClosed: true) }
         _ = try channel.readOutbound(as: SSHChannelData.self) // discard welcome
 
@@ -36,11 +37,11 @@ struct PipelineTests {
     // can distinguish them. Listener's session is pre-injected so SayCommand can
     // find it in SessionStorage and ResponseHandler can write to channel2.
     @Test func listenerReceivesSayMessage() async throws {
-        let speaker = await makeUser()
-        let listener = await makeUser()
+        let speaker = await makeUser(in: world.userRepository)
+        let listener = await makeUser(in: world.userRepository)
 
-        let channel1 = try makeConnectedChannel(port: 1)
-        let channel2 = try makeConnectedChannel(port: 2)
+        let channel1 = try makeConnectedChannel(port: 1, world: world)
+        let channel2 = try makeConnectedChannel(port: 2, world: world)
         defer {
             _ = try? channel1.finish(acceptAlreadyClosed: true)
             _ = try? channel2.finish(acceptAlreadyClosed: true)
@@ -64,9 +65,9 @@ struct PipelineTests {
 
 // MARK: - Helpers
 
-private func makeConnectedChannel(port: Int) throws -> EmbeddedChannel {
+private func makeConnectedChannel(port: Int, world: World) throws -> EmbeddedChannel {
     let channel = EmbeddedChannel()
-    try configureMUDPipeline(channel)
+    try configureMUDPipeline(channel, world: world)
     try channel.connect(to: .init(ipAddress: "127.0.0.1", port: port)).wait()
     return channel
 }
@@ -96,9 +97,9 @@ private func injectSession(user: User, channel: EmbeddedChannel) {
     )
 }
 
-private func makeUser() async -> User {
+private func makeUser(in repository: any Repository<User>) async -> User {
     var user = User(username: "user_\(UUID())", password: "pass")
     user.currentRoomID = Room.STARTER_ROOM_ID
-    await user.save()
+    await repository.save(user)
     return user
 }
